@@ -1,0 +1,20 @@
+package de.malteans.recipes.app
+
+import kotlinx.serialization.Serializable
+
+sealed interface Route {
+    @Serializable
+    data object PlanScreen
+
+    @Serializable
+    data object SearchScreen
+
+    @Serializable
+    data object AddScreen
+
+    @Serializable
+    data class DetailScreen(val id: Long)
+
+    @Serializable
+    data class EditScreen(val id: Long)
+}

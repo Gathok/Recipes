@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">Recipes</string>
+    <string name="en">English</string>
+    <string name="de">Deutsch</string>
+    <string name="recipe_search_hint">Rezepte durchsuchen…</string>
+    <string name="local_recipes">Lokale Rezepte</string>
+    <string name="cloud_recipes">Cloud Rezepte</string>
+    <string name="no_local_recipes">Noch keine lokalen Rezepte vorhanden.</string>
+    <string name="name">Name</string>
+    <string name="description">Beschreibung</string>
+    <string name="work_time">Arbeitszeit</string>
+    <string name="work_time_headline">Arbeitszeit (min)</string>
+    <string name="min">min</string>
+    <string name="total_time">Gesamtzeit</string>
+    <string name="total_time_headline">Gesamtzeit (min)</string>
+    <string name="general">Allgemein</string>
+    <string name="ingredients">Zutaten</string>
+    <string name="preparation">Zubereitung</string>
+    <string name="add_recipe">Rezept hinzufügen</string>
+    <string name="edit_recipe">Rezept bearbeiten</string>
+    <string name="add_dialog_title">%1$s hinzufügen</string>
+    <string name="edit_dialog_title">%1$s bearbeiten</string>
+    <string name="ingredient">Zutat</string>
+    <string name="amount">Anzahl</string>
+    <string name="unit">Einheit</string>
+    <string name="add_ingredient">Zutat hinzufügen</string>
+    <string name="no_ingredients">Noch keine Zutaten.</string>
+    <string name="step">Schritt %1$d</string>
+    <string name="recipe_added_snackbar">Rezept '%1$s' hinzugefügt</string>
+    <string name="show">Anzeigen</string>
+    <string name="no_recipes_for_search">Keine Rezepte gefunden.</string>
+    <string name="coming_soon">Noch in Entwicklung…</string>
+</resources>
