@@ -2,12 +2,12 @@ package de.malteans.recipes
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import de.malteans.recipes.domain.Ingredient
-import de.malteans.recipes.domain.Recipe
-import de.malteans.recipes.presentation.details.DetailsScreen
-import de.malteans.recipes.presentation.details.DetailsState
-import de.malteans.recipes.presentation.search.components.RecipeListItem
-import de.malteans.recipes.presentation.theme.RecipesTheme
+import de.malteans.recipes.core.domain.Ingredient
+import de.malteans.recipes.core.domain.Recipe
+import de.malteans.recipes.core.presentation.details.DetailsScreen
+import de.malteans.recipes.core.presentation.details.DetailsState
+import de.malteans.recipes.core.presentation.search.components.RecipeListItem
+import de.malteans.recipes.theme.RecipesTheme
 
 val recipe = Recipe(
     name = "Spaghetti Carbonara",

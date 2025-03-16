@@ -1,0 +1,236 @@
+package de.malteans.recipes.core.presentation.search
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.malteans.recipes.core.presentation.components.toUiText
+import de.malteans.recipes.core.presentation.search.components.RecipesList
+import de.malteans.recipes.core.presentation.search.components.SearchBar
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import recipes.composeapp.generated.resources.Res
+import recipes.composeapp.generated.resources.cloud_recipes
+import recipes.composeapp.generated.resources.local_recipes
+import recipes.composeapp.generated.resources.no_local_recipes
+import recipes.composeapp.generated.resources.no_recipes_for_search
+import recipes.composeapp.generated.resources.no_search_query
+
+@Composable
+fun SearchScreenRoot(
+    viewModel: SearchViewModel = koinViewModel(),
+    onRecipeClick: (Long) -> Unit,
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Collect navigation event from the ViewModel.
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { localId ->
+            onRecipeClick(localId)
+        }
+    }
+
+    SearchScreen(
+        state = state,
+        onAction = { action ->
+            // Forward all actions to the view model.
+            viewModel.onAction(action)
+        }
+    )
+}
+
+@Composable
+fun SearchScreen(
+    state: SearchState,
+    onAction: (SearchAction) -> Unit,
+) {
+    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+
+    val pagerState = rememberPagerState { 2 }
+    val localRecipesListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val cloudRecipesListState = androidx.compose.foundation.lazy.rememberLazyListState()
+
+    LaunchedEffect(state.selectedTabIndex) {
+        pagerState.animateScrollToPage(state.selectedTabIndex)
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        onAction(SearchAction.OnTabSelected(pagerState.currentPage))
+        when (pagerState.currentPage) {
+            0 -> localRecipesListState.animateScrollToItem(0)
+            1 -> cloudRecipesListState.animateScrollToItem(0)
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.surface)
+            .statusBarsPadding(),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+    ) {
+        SearchBar(
+            searchQuery = state.searchQuery,
+            onSearchQueryChange = {
+                onAction(SearchAction.OnSearchQueryChange(it))
+            },
+            onSearch = {
+                keyboardController?.hide()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+        Surface(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(
+                topStart = 32.dp,
+                topEnd = 32.dp
+            )
+        ) {
+            Column(
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                TabRow(
+                    selectedTabIndex = state.selectedTabIndex,
+                    modifier = Modifier
+                        .padding(bottom = 12.dp)
+                        .fillMaxWidth(),
+                    indicator = { tabPositions ->
+                        TabRowDefaults.SecondaryIndicator(
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .tabIndicatorOffset(tabPositions[state.selectedTabIndex])
+                        )
+                    },
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ) {
+                    Tab(
+                        selected = state.selectedTabIndex == 0,
+                        onClick = {
+                            onAction(SearchAction.OnTabSelected(0))
+                        },
+                        modifier = Modifier
+                            .weight(1f),
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.local_recipes),
+                            modifier = Modifier
+                                .padding(top = 24.dp, bottom = 12.dp)
+                        )
+                    }
+                    Tab(
+                        selected = state.selectedTabIndex == 1,
+                        onClick = {
+                            onAction(SearchAction.OnTabSelected(1))
+                        },
+                        modifier = Modifier
+                            .weight(1f),
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                    ) {
+                        Text(
+                            text = stringResource(Res.string.cloud_recipes),
+                            modifier = Modifier
+                                .padding(top = 24.dp, bottom = 12.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                ) { pageIndex ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        if (state.isLoading) {
+                            CircularProgressIndicator()
+                        } else {
+                            when (pageIndex)    {
+                                0 -> { // Local recipes
+                                    if (state.localRecipes.isEmpty()) {
+                                        Text(
+                                            text = if (state.searchQuery.isEmpty()) {
+                                                stringResource(Res.string.no_local_recipes)
+                                            } else {
+                                                stringResource(Res.string.no_recipes_for_search)
+                                            },
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    } else {
+                                        // Note: onRecipeClick now sends the full Recipe object
+                                        RecipesList(
+                                            recipes = state.localRecipes,
+                                            onRecipeClick = {
+                                                onAction(SearchAction.OnRecipeClick(it))
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            scrollState = localRecipesListState
+                                        )
+                                    }
+                                }
+                                1 -> { // Cloud recipes
+                                    if (state.cloudRecipes.isEmpty()) {
+                                        Text(
+                                            text = if (state.cloudError != null) {
+                                                state.cloudError.toUiText().asString()
+                                            } else if (state.searchQuery.isNotEmpty()) {
+                                                stringResource(Res.string.no_recipes_for_search)
+                                            } else {
+                                                stringResource(Res.string.no_search_query)
+                                            },
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    } else {
+                                        RecipesList(
+                                            recipes = state.cloudRecipes,
+                                            onRecipeClick = {
+                                                onAction(SearchAction.OnRecipeClick(it))
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                            scrollState = cloudRecipesListState
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

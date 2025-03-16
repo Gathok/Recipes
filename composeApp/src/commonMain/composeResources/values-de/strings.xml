@@ -31,4 +31,5 @@
     <string name="show">Anzeigen</string>
     <string name="no_recipes_for_search">Keine Rezepte gefunden.</string>
     <string name="coming_soon">Noch in Entwicklung…</string>
+    <string name="no_search_query">Keine Suche eingegeben…</string>
 </resources>

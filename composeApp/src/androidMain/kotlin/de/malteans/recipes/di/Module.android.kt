@@ -1,6 +1,6 @@
 package de.malteans.recipes.di
 
-import de.malteans.recipes.data.database.DatabaseFactory
+import de.malteans.recipes.core.data.database.DatabaseFactory
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import org.koin.android.ext.koin.androidApplication

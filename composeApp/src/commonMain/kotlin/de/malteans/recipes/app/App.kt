@@ -3,8 +3,8 @@ package de.malteans.recipes.app
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
-import de.malteans.recipes.presentation.main.MainScreenRoot
-import de.malteans.recipes.presentation.theme.RecipesTheme
+import de.malteans.recipes.core.presentation.main.MainScreenRoot
+import de.malteans.recipes.theme.RecipesTheme
 
 val LocalAppLocalization = compositionLocalOf {
     AppLang.English
