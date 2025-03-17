@@ -57,8 +57,8 @@ import recipes.composeapp.generated.resources.app_icon
 fun ImageBackground(
     imageUrl: String?,
     onBackClick: () -> Unit,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
+    onEditClick: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     content: @Composable (Boolean, Float) -> Unit
 ) {
@@ -255,28 +255,34 @@ fun ImageBackground(
                 .statusBarsPadding(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(onClick = onEditClick) {
+            IconButton(
+                onClick = { onEditClick?.invoke() }
+            ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit Recipe",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = if (onEditClick == null) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.onPrimary
                 )
             }
             IconButton(
                 onClick = {
-                    if (!deleteClicked.value) {
-                        deleteClicked.value = true
-                    } else {
-                        onDeleteClick()
-                        deleteClicked.value = false
+                    if (onDeleteClick != null) {
+                        if (!deleteClicked.value) {
+                            deleteClicked.value = true
+                        } else {
+                            onDeleteClick()
+                            deleteClicked.value = false
+                        }
                     }
                 }
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete Recipe",
-                    tint = if (deleteClicked.value) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onPrimary
+                    tint = if (onDeleteClick == null) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
+                        else if (deleteClicked.value) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onPrimary
                 )
             }
         }

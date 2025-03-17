@@ -70,13 +70,7 @@ class DefaultRecipeRepository(
     // New function: If the recipe is a cloud recipe and has not been saved locally,
     // check if a recipe with the same cloudId exists and return its id.
     // Otherwise, upsert the recipe.
-    override suspend fun upsertOrOpenCloudRecipe(recipe: Recipe): Long {
-        if (recipe.cloudId != null) {
-            val existing = dao.getRecipeByCloudId(recipe.cloudId)
-            if (existing != null) {
-                return existing.id
-            }
-        }
+    override suspend fun saveCloudRecipe(recipe: Recipe): Long {
         return upsertRecipe(recipe, fromCloud = true)
     }
 
@@ -119,7 +113,20 @@ class DefaultRecipeRepository(
         return remoteDataSource
             .fetchRecipes(query)
             .map { dtoList ->
-                dtoList.map { dto -> dto.toDomain() }
+                val allLocalRecipes = dao.getAllRecipes().associateBy { it.cloudId }
+                dtoList
+                    .map { dto -> dto.toDomain() }
+                    .map { cloudRecipe ->
+                        val localRecipe = allLocalRecipes[cloudRecipe.cloudId]
+                        if (localRecipe != null) {
+                            cloudRecipe.copy(
+                                id = localRecipe.id,
+                                editedFromCloud = localRecipe.editedFromCloud
+                            )
+                        } else {
+                            cloudRecipe
+                        }
+                    }
             }
     }
 }

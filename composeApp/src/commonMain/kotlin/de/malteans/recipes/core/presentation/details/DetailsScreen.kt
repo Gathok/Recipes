@@ -1,11 +1,20 @@
 package de.malteans.recipes.core.presentation.details
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.HoverInteraction
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,44 +22,67 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
+import de.malteans.recipes.core.presentation.details.components.CustomCloudDownloadIcon
+import de.malteans.recipes.core.presentation.details.components.CustomDownloadDoneIcon
 import de.malteans.recipes.core.presentation.details.components.ImageBackground
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
+import recipes.composeapp.generated.resources.cloud_recipe
+import recipes.composeapp.generated.resources.edited_cloud_recipe
 import recipes.composeapp.generated.resources.ingredients
+import recipes.composeapp.generated.resources.local_recipe
 import recipes.composeapp.generated.resources.min
 import recipes.composeapp.generated.resources.preparation
+import recipes.composeapp.generated.resources.saved_cloud_recipe
 
 @Composable
 fun DetailsScreenRoot(
     viewModel: DetailsViewModel = koinViewModel(),
-    onBack: () -> Unit,
+    onBack: (Boolean) -> Unit,
     onEdit: (Long) -> Unit,
-    recipeId: Long,
+    onSave: () -> Unit,
+    recipeId: Long?,
 ) {
-    viewModel.setRecipeId(recipeId)
+    if (recipeId != null) viewModel.setRecipeId(recipeId)
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     DetailsScreen(
         state = state,
         onAction = { action ->
             when (action) {
-                DetailsAction.OnBack -> onBack()
-                DetailsAction.OnEdit -> onEdit(recipeId)
+                is DetailsAction.OnBack -> onBack(action.onCloudRecipe)
+                DetailsAction.OnEdit -> onEdit(recipeId ?: state.recipe?.id
+                    ?: throw IllegalStateException("recipeId and recipe are null"))
                 DetailsAction.OnDelete -> {
-                    onBack()
+                    onBack(false)
                     viewModel.onAction(DetailsAction.OnDelete)
+                }
+                is DetailsAction.OnSave -> {
+                    viewModel.onAction(DetailsAction.OnSave)
+                    onSave()
                 }
                 else -> viewModel.onAction(action)
             }
@@ -63,69 +95,70 @@ fun DetailsScreen(
     state: DetailsState,
     onAction: (DetailsAction) -> Unit
 ) {
+    val scope = rememberCoroutineScope()
+
     ImageBackground(
         imageUrl = state.recipe?.imageUrl,
-        onBackClick = { onAction(DetailsAction.OnBack) },
-        onEditClick = { onAction(DetailsAction.OnEdit) },
-        onDeleteClick = { onAction(DetailsAction.OnDelete) }
+        onBackClick = { onAction(DetailsAction.OnBack(state.recipe?.isCloudOnly() == true)) },
+        onEditClick = if ((state.recipe?.id ?: 0L) == 0L) null
+            else { { onAction(DetailsAction.OnEdit) } },
+        onDeleteClick = if ((state.recipe?.id ?: 0L) == 0L) null
+            else { { onAction(DetailsAction.OnDelete) } }
     ) { enableScrolling, dragProgress ->
         Column(
             modifier = Modifier
                 .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 0.dp)
         ) {
             state.recipe?.let { recipe ->
-                Column(
+                Row(
                     modifier = Modifier
                         .padding(vertical = 4.dp, horizontal = 8.dp)
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = recipe.name,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    if (recipe.description.isNotBlank()) {
-                        Text(
-                            text = recipe.description,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-                // --- New save locally indicator/button ---
-                if (recipe.cloudId != null && recipe.id == 0L) {
-                    // Recipe came from the cloud but isn’t saved locally yet
-                    Row(
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .weight(1f)
                     ) {
                         Text(
-                            text = "Cloud Recipe (not saved locally)",
-                            style = MaterialTheme.typography.bodyMedium
+                            text = recipe.name,
+                            style = MaterialTheme.typography.headlineSmall
                         )
-                        Spacer(modifier = Modifier.weight(1f))
+                        if (recipe.description.isNotBlank()) {
+                            Text(
+                                text = recipe.description,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                         Text(
-                            text = "Save",
-                            style = MaterialTheme.typography.labelLarge,
-                            modifier = Modifier
-                                .clickable { onAction(DetailsAction.OnSave) }
-                                .padding(8.dp),
+                            text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
+                                else if (recipe.isLocalOnly()) stringResource(Res.string.local_recipe)
+                                else if (recipe.editedFromCloud) stringResource(Res.string.edited_cloud_recipe)
+                                else stringResource(Res.string.saved_cloud_recipe),
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
-                } else if (recipe.cloudId != null && recipe.id != 0L) {
-                    // Recipe is from the cloud and has been saved locally
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    AnimatedVisibility(
+                        visible = recipe.isCloudOnly(),
+                        enter = EnterTransition.None,
+                        exit = fadeOut(animationSpec = tween(
+                            delayMillis = 3000,
+                            durationMillis = 500
+                        ))
                     ) {
-                        Text(
-                            text = "Saved locally",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Column {
+                            IconButton( onClick = { onAction(DetailsAction.OnSave) } ) {
+                                Icon(
+                                    imageVector = if (recipe.isCloudOnly()) CustomCloudDownloadIcon
+                                        else CustomDownloadDoneIcon,
+                                    contentDescription = "Save cloud recipe locally",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                )
+                            }
+                        }
                     }
                 }
                 // -------------------------------------------
@@ -258,4 +291,11 @@ fun Double?.toNiceString(): String {
         return "${this.toInt()} "
     }
     return "$this "
+}
+
+fun Recipe.isCloudOnly(): Boolean {
+    return this.id == 0L && this.cloudId != null
+}
+fun Recipe.isLocalOnly(): Boolean {
+    return this.id != 0L && this.cloudId == null
 }

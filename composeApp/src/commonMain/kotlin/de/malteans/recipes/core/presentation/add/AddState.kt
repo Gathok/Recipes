@@ -21,6 +21,6 @@ data class AddState(
     val allIngredients: List<Ingredient> = emptyList(),
 
     // Fields for Editing
-    val isEditingRecipe: Boolean = false,
-    val editingRecipeId: Long? = null
+    val editingRecipeId: Long? = null,
+    val cloudId: Long? = null,
 )

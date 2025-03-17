@@ -43,6 +43,8 @@ class AddViewModel(
         val state = state.value
         val recipe = Recipe(
             id = state.editingRecipeId ?: 0L,
+            cloudId = state.cloudId,
+            editedFromCloud = state.cloudId != null,
             name = state.name,
             description = state.description,
             imageUrl = state.imageUrl,
@@ -64,6 +66,8 @@ class AddViewModel(
             val recipe = repository.getRecipeById(recipeId).first()
             _state.update {
                 it.copy(
+                    editingRecipeId = recipe.id,
+                    cloudId = recipe.cloudId,
                     name = recipe.name,
                     description = recipe.description,
                     imageUrl = recipe.imageUrl,
@@ -73,8 +77,6 @@ class AddViewModel(
                     totalTime = recipe.totalTime,
                     servings = recipe.servings,
                     rating = recipe.rating,
-                    isEditingRecipe = true,
-                    editingRecipeId = recipe.id
                 )
             }
         }

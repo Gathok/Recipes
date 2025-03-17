@@ -9,6 +9,7 @@ fun Recipe.toRecipeEntity(): RecipeEntity {
     return RecipeEntity(
         id = this.id,
         cloudId = this.cloudId,  // include the cloud id
+        editedFromCloud = this.editedFromCloud,
         name = this.name,
         description = this.description,
         imageUrl = this.imageUrl,
@@ -24,6 +25,7 @@ fun RecipeWithDetails.toDomain(): Recipe {
     return Recipe(
         id = recipe.id,
         cloudId = recipe.cloudId,  // include cloudId from the database
+        editedFromCloud = recipe.editedFromCloud,
         name = recipe.name,
         description = recipe.description,
         imageUrl = recipe.imageUrl,

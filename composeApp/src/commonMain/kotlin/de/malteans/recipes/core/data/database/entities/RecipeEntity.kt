@@ -8,6 +8,7 @@ data class RecipeEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
     val cloudId: Long? = null, // New field: holds the cloud recipe id if available
+    val editedFromCloud: Boolean = false,
     val name: String,
     val description: String,
     val imageUrl: String,

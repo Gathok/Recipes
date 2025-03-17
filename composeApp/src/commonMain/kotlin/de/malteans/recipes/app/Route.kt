@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 
 sealed interface Route {
     @Serializable
+    data object Main
+
+    @Serializable
     data object PlanScreen
 
     @Serializable
@@ -13,7 +16,7 @@ sealed interface Route {
     data object AddScreen
 
     @Serializable
-    data class DetailScreen(val id: Long)
+    data class DetailScreen(val id: Long? = null)
 
     @Serializable
     data class EditScreen(val id: Long)

@@ -1,9 +1,21 @@
 package de.malteans.recipes.core.presentation.main.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -11,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -33,19 +44,46 @@ fun NavItem(
             .background(
                 MaterialTheme.colorScheme.surfaceContainerHigh
             )
-            .background(
-                if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                else Color.Transparent,
-            )
     ) {
-        Icon(
-            imageVector = if (selected && selectedIcon != null) selectedIcon
-            else icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
+        Box(
             modifier = Modifier
-                .scale(1.2f)
-                .padding(12.dp)
-        )
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ){
+            Column(
+                modifier = Modifier
+                    .matchParentSize(),
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                AnimatedVisibility (
+                    visible = selected,
+                    enter = expandVertically(
+                        animationSpec = tween(
+                            durationMillis = 300
+                        )
+                    ),
+                    exit = shrinkVertically(
+                        animationSpec = tween(
+                            durationMillis = 300
+                        )
+                    ),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+                    )
+                }
+            }
+            Icon(
+                imageVector = if (selected && selectedIcon != null) selectedIcon
+                else icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .scale(1.2f)
+                    .padding(12.dp)
+            )
+        }
     }
 }

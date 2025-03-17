@@ -23,7 +23,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
 import de.malteans.recipes.app.Route
 import de.malteans.recipes.core.presentation.components.SnackbarManager
 import de.malteans.recipes.core.presentation.main.components.NavGraph
@@ -111,7 +114,7 @@ fun MainScreen(
                     selectedIcon = Icons.Filled.Search,
                     onClick = {
                         if (state.curScreen != Screen.Search) {
-                            navController.navigate(Route.SearchScreen)
+                            navController.popBackStack<Route.SearchScreen>(false)
                         }
                     },
                     selected = state.curScreen == Screen.Search,

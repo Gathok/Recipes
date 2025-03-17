@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface RecipeRepository {
     suspend fun upsertRecipe(recipe: Recipe, fromCloud: Boolean = false): Long
-    suspend fun upsertOrOpenCloudRecipe(recipe: Recipe): Long  // New function for cloud recipes
     suspend fun deleteRecipeById(id: Long)
     suspend fun fetchLocalRecipes(query: String): List<Recipe>
     fun getAllRecipes(): Flow<List<Recipe>>
@@ -17,4 +16,5 @@ interface RecipeRepository {
     fun getAllIngredients(): Flow<List<Ingredient>>
 
     suspend fun fetchCloudRecipes(query: String): Result<List<Recipe>, DataError.Remote>
+    suspend fun saveCloudRecipe(recipe: Recipe): Long  // New function for cloud recipes
 }

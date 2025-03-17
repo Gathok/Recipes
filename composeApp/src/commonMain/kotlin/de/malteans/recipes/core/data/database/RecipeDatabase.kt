@@ -11,7 +11,7 @@ import de.malteans.recipes.core.data.database.entities.StepIngredientEntity
 @Database(
     entities = [IngredientEntity::class, RecipeEntity::class, RecipeIngredientEntity::class,
         RecipeStepEntity::class, StepIngredientEntity::class],
-    version = 3, // Updated from 2 to 3 to add the cloudId column
+    version = 4,
     exportSchema = false,
 )
 abstract class RecipeDatabase : RoomDatabase() {

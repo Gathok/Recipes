@@ -8,6 +8,7 @@ import de.malteans.recipes.core.data.database.RecipeDatabase
 import de.malteans.recipes.core.data.network.RemoteRecipeDataSource
 import de.malteans.recipes.core.data.repository.DefaultRecipeRepository
 import de.malteans.recipes.core.domain.RecipeRepository
+import de.malteans.recipes.core.presentation.SelectedRecipeViewModel
 import de.malteans.recipes.core.presentation.main.MainViewModel
 import de.malteans.recipes.core.presentation.search.SearchViewModel
 import de.malteans.recipes.plan.presentation.plan.PlanViewModel
@@ -35,6 +36,7 @@ val sharedModule = module {
     viewModel { MainViewModel(get()) }
     viewModel { PlanViewModel(get()) }
     viewModel { SearchViewModel(get()) }
+    viewModel { SelectedRecipeViewModel() }
     viewModel { AddViewModel(get()) }
     viewModel { DetailsViewModel(get()) }
 }

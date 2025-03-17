@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.components.toUiText
 import de.malteans.recipes.core.presentation.search.components.RecipesList
 import de.malteans.recipes.core.presentation.search.components.SearchBar
@@ -41,22 +42,17 @@ import recipes.composeapp.generated.resources.no_search_query
 @Composable
 fun SearchScreenRoot(
     viewModel: SearchViewModel = koinViewModel(),
-    onRecipeClick: (Long) -> Unit,
+    onRecipeClick: (Recipe) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    // Collect navigation event from the ViewModel.
-    LaunchedEffect(Unit) {
-        viewModel.navigationEvent.collect { localId ->
-            onRecipeClick(localId)
-        }
-    }
 
     SearchScreen(
         state = state,
         onAction = { action ->
-            // Forward all actions to the view model.
-            viewModel.onAction(action)
+            when (action) {
+                is SearchAction.OnRecipeClick -> onRecipeClick(action.recipe)
+                else -> viewModel.onAction(action)
+            }
         }
     )
 }

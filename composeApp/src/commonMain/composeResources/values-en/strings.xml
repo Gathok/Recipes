@@ -38,4 +38,8 @@
     <string name="no_recipes_for_search">No recipes found.</string>
     <string name="coming_soon">Coming soon…</string>
     <string name="no_search_query">No search query entered…</string>
+    <string name="local_recipe">Local recipe</string>
+    <string name="cloud_recipe">Cloud recipe</string>
+    <string name="edited_cloud_recipe">Edited cloud recipe</string>
+    <string name="saved_cloud_recipe">Saved cloud recipe</string>
 </resources>

@@ -32,6 +32,9 @@ interface RecipeDao {
     @Query("DELETE FROM RecipeStepEntity WHERE recipeId = :recipeId")
     suspend fun deleteRecipeStepsForRecipe(recipeId: Long)
 
+    @Query("SELECT * FROM RecipeEntity")
+    suspend fun getAllRecipes(): List<RecipeEntity>
+
     // Get recipe details with ingredients and steps
     @Transaction
     @Query("SELECT * FROM RecipeEntity WHERE id = :recipeId")

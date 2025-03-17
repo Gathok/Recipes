@@ -10,7 +10,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun EditScreenRoot(
     viewModel: AddViewModel = koinViewModel(),
     recipeId: Long,
-    onFinished: () -> Unit
+    onFinished: (Long) -> Unit
 ) {
     LaunchedEffect(recipeId) {
         viewModel.loadRecipeForEditing(recipeId)
@@ -22,7 +22,7 @@ fun EditScreenRoot(
         state = state,
         onAction = { action ->
             when (action) {
-                is AddAction.OnRecipeShow -> onFinished()
+                is AddAction.OnRecipeShow -> onFinished(action.id)
                 else -> viewModel.onAction(action)
             }
         },

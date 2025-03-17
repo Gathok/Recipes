@@ -4,7 +4,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import de.malteans.recipes.core.data.database.migrations.MIGRATION1_2
 import de.malteans.recipes.core.data.database.migrations.MIGRATION1_3
+import de.malteans.recipes.core.data.database.migrations.MIGRATION1_4
 import de.malteans.recipes.core.data.database.migrations.MIGRATION2_3
+import de.malteans.recipes.core.data.database.migrations.MIGRATION2_4
+import de.malteans.recipes.core.data.database.migrations.MIGRATION3_4
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -17,8 +20,12 @@ actual class DatabaseFactory {
         return Room.databaseBuilder<RecipeDatabase>(
             name = dbFilePath,
         )
-            .addMigrations(RecipeDatabase.MIGRATION1_2,
-                RecipeDatabase.MIGRATION1_3, RecipeDatabase.MIGRATION2_3)
+            .addMigrations(
+                RecipeDatabase.Companion.MIGRATION1_2,
+                RecipeDatabase.Companion.MIGRATION1_3, RecipeDatabase.Companion.MIGRATION2_3,
+                RecipeDatabase.Companion.MIGRATION1_4, RecipeDatabase.Companion.MIGRATION2_4,
+                    RecipeDatabase.Companion.MIGRATION3_4
+            )
     }
 
     private fun documentDirectory(): String {

@@ -7,7 +7,6 @@ import de.malteans.recipes.core.domain.errorHandling.onError
 import de.malteans.recipes.core.domain.errorHandling.onSuccess
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.debounce
@@ -39,10 +38,6 @@ class SearchViewModel(
             initialValue = SearchState()
         )
 
-    // Navigation events: will emit the local recipe id to navigate with
-    private val _navigationEvent = MutableSharedFlow<Long>()
-    val navigationEvent = _navigationEvent
-
     fun onAction(action: SearchAction) {
         when (action) {
             is SearchAction.OnSearchQueryChange -> {
@@ -66,18 +61,7 @@ class SearchViewModel(
                     }
                 }
             }
-            is SearchAction.OnRecipeClick -> {
-                viewModelScope.launch {
-                    val localId = if (action.recipe.cloudId != null && action.recipe.id == 0L) {
-                        // For cloud recipes not yet saved locally,
-                        // check if it exists (open it) or upsert if not.
-                        repository.upsertOrOpenCloudRecipe(action.recipe)
-                    } else {
-                        action.recipe.id
-                    }
-                    _navigationEvent.emit(localId)
-                }
-            }
+            else -> TODO()
         }
     }
 

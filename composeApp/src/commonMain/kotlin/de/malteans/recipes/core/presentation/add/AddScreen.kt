@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -258,16 +259,29 @@ fun AddScreen(
                     .weight(1f),
                 horizontalAlignment = Alignment.Start
             ) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = "Clear the form",
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .clickable {
-                            onAction(AddAction.OnClear)
-                            focusManager.clearFocus()
-                        }
-                )
+                if (state.editingRecipeId == null) { // Is Add
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear the form",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clickable {
+                                onAction(AddAction.OnClear)
+                                focusManager.clearFocus()
+                            }
+                    )
+                } else { // Is Edit
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Default.ArrowBack,
+                        contentDescription = "Back without saving",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clickable {
+                                onAction(AddAction.OnRecipeShow(state.editingRecipeId))
+                                focusManager.clearFocus()
+                            }
+                    )
+                }
             }
             Column(
                 modifier = Modifier
@@ -275,7 +289,7 @@ fun AddScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if(state.isEditingRecipe) stringResource(Res.string.edit_recipe)
+                    text = if(state.editingRecipeId != null) stringResource(Res.string.edit_recipe)
                         else stringResource(Res.string.add_recipe),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
@@ -300,7 +314,7 @@ fun AddScreen(
                                 scope.launch {
                                     val id = onRecipeAdd()
                                     onAction(AddAction.OnClear)
-                                    if (state.isEditingRecipe) {
+                                    if (state.editingRecipeId != null) {
                                         onAction(AddAction.OnRecipeShow(id))
                                     } else {
                                         SnackbarManager.showSnackbar(
