@@ -51,5 +51,7 @@
         <string>en</string>
         <string>de</string>
     </array>
+    <key>API_TOKEN</key>
+    <string>OeDJFFAO9pcV0nq2RsJE</string>
 </dict>
 </plist>

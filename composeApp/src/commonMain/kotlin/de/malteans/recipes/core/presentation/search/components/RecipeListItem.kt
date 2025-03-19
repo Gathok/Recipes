@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,7 +44,9 @@ import coil3.compose.rememberAsyncImagePainter
 import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import recipes.composeapp.generated.resources.Res
+import recipes.composeapp.generated.resources.min
 import recipes.composeapp.generated.resources.recipe_img_2
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -76,6 +77,7 @@ fun RecipeListItem(
         ) {
             Box(
                 modifier = Modifier
+                    .width(85.dp)
                     .height(100.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -108,7 +110,7 @@ fun RecipeListItem(
 
                 when (val result = imageLoadResult) {
                     null -> PulseAnimation(
-                        modifier = Modifier.size(60.dp)
+                        modifier = Modifier.size(85.dp)
                     )
                     else -> {
                         Image(
@@ -116,22 +118,16 @@ fun RecipeListItem(
                                 painterResource(Res.drawable.recipe_img_2)
                             },
                             contentDescription = recipe.name,
-                            contentScale = if (result.isSuccess) {
-                                ContentScale.Crop
-                            } else {
-                                ContentScale.FillBounds
-                            },
+                            contentScale = if (result.isSuccess) ContentScale.Crop else ContentScale.FillBounds,
                             modifier = Modifier
-                                .aspectRatio(
-                                    ratio = 0.85f,
-                                    matchHeightConstraintsFirst = true
-                                )
+                                .width(85.dp)
+                                .height(100.dp)
                                 .graphicsLayer {
                                     val scale = if (result.isSuccess) 0.3f + animatedScale else 1f
                                     scaleX = scale
-                                    scaleY = if (result.isSuccess) scale else 0.85f
+                                    scaleY = scale
                                 }
-                                .clip(shape = RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
                         )
                     }
                 }
@@ -184,14 +180,14 @@ fun RecipeListItem(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = if (recipe.workTime != null && recipe.workTime != recipe.totalTime)
-                                    "${recipe.workTime} / ${recipe.totalTime ?: "–"} min"
-                                else "${recipe.totalTime ?: "–"} min",
+                                    "${recipe.workTime} / ${recipe.totalTime ?: "–"} ${stringResource(Res.string.min)}"
+                                else "${recipe.totalTime ?: "–"} ${stringResource(Res.string.min)}",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = recipe.ingredients.keys.joinToString(", ") { it.name }.ifBlank { "–" },
+                        text = recipe.ingredients.keys.joinToString("; ") { it.name }.ifBlank { "–" },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         maxLines = 1,

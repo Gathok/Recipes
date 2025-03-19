@@ -4,6 +4,7 @@ data class Recipe(
     val id: Long = 0L,
     val cloudId: Long? = null, // New field: non-null if coming from the cloud
     val editedFromCloud: Boolean = false, // New field: true if edited locally after being fetched from the cloud
+    val sourceUrl: String? = null,
     val name: String,
     val description: String,
     val imageUrl: String,

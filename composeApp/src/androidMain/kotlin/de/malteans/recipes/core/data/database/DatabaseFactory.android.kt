@@ -6,9 +6,13 @@ import androidx.room.RoomDatabase
 import de.malteans.recipes.core.data.database.migrations.MIGRATION1_2
 import de.malteans.recipes.core.data.database.migrations.MIGRATION1_3
 import de.malteans.recipes.core.data.database.migrations.MIGRATION1_4
+import de.malteans.recipes.core.data.database.migrations.MIGRATION1_5
 import de.malteans.recipes.core.data.database.migrations.MIGRATION2_3
 import de.malteans.recipes.core.data.database.migrations.MIGRATION2_4
+import de.malteans.recipes.core.data.database.migrations.MIGRATION2_5
 import de.malteans.recipes.core.data.database.migrations.MIGRATION3_4
+import de.malteans.recipes.core.data.database.migrations.MIGRATION3_5
+import de.malteans.recipes.core.data.database.migrations.MIGRATION4_5
 
 actual class DatabaseFactory(
     private val context: Context
@@ -24,7 +28,9 @@ actual class DatabaseFactory(
                 RecipeDatabase.Companion.MIGRATION1_2,
                 RecipeDatabase.Companion.MIGRATION1_3, RecipeDatabase.Companion.MIGRATION2_3,
                 RecipeDatabase.Companion.MIGRATION1_4, RecipeDatabase.Companion.MIGRATION2_4,
-                    RecipeDatabase.Companion.MIGRATION3_4
+                    RecipeDatabase.Companion.MIGRATION3_4,
+                RecipeDatabase.Companion.MIGRATION1_5, RecipeDatabase.Companion.MIGRATION2_5,
+                    RecipeDatabase.Companion.MIGRATION3_5, RecipeDatabase.Companion.MIGRATION4_5,
             )
     }
 }

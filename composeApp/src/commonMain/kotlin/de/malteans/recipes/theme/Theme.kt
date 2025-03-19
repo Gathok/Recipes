@@ -1,5 +1,6 @@
 package de.malteans.recipes.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -81,12 +82,19 @@ private val darkScheme = darkColorScheme(
     surfaceContainerHighest = surfaceContainerHighestDark,
 )
 
+/**
+ * RecipesTheme now automatically applies light/dark mode based on the system settings.
+ *
+ * @param useDarkTheme Automatically determined by [isSystemInDarkTheme] unless overridden.
+ * @param content The composable content.
+ */
 @Composable
 fun RecipesTheme(
+    useDarkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = darkScheme,
+        colorScheme = if (useDarkTheme) darkScheme else lightScheme,
         typography = Typography,
         content = content
     )

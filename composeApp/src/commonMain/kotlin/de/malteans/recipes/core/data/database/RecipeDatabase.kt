@@ -11,7 +11,7 @@ import de.malteans.recipes.core.data.database.entities.StepIngredientEntity
 @Database(
     entities = [IngredientEntity::class, RecipeEntity::class, RecipeIngredientEntity::class,
         RecipeStepEntity::class, StepIngredientEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class RecipeDatabase : RoomDatabase() {

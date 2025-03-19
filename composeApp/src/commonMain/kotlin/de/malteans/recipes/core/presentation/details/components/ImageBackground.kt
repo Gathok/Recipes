@@ -22,8 +22,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,8 +55,7 @@ import recipes.composeapp.generated.resources.app_icon
 fun ImageBackground(
     imageUrl: String?,
     onBackClick: () -> Unit,
-    onEditClick: (() -> Unit)? = null,
-    onDeleteClick: (() -> Unit)? = null,
+    rightIcons: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable (Boolean, Float) -> Unit
 ) {
@@ -241,13 +238,7 @@ fun ImageBackground(
         }
 
         // Edit and Delete buttons in the top-right corner.
-        val deleteClicked = remember { mutableStateOf(false) }
-        LaunchedEffect(deleteClicked.value) {
-            if (deleteClicked.value) {
-                delay(3000)
-                deleteClicked.value = false
-            }
-        }
+
         Row(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -255,36 +246,7 @@ fun ImageBackground(
                 .statusBarsPadding(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconButton(
-                onClick = { onEditClick?.invoke() }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Recipe",
-                    tint = if (onEditClick == null) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
-                        else MaterialTheme.colorScheme.onPrimary
-                )
-            }
-            IconButton(
-                onClick = {
-                    if (onDeleteClick != null) {
-                        if (!deleteClicked.value) {
-                            deleteClicked.value = true
-                        } else {
-                            onDeleteClick()
-                            deleteClicked.value = false
-                        }
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete Recipe",
-                    tint = if (onDeleteClick == null) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f)
-                        else if (deleteClicked.value) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            rightIcons()
         }
     }
 }

@@ -2,19 +2,13 @@ package de.malteans.recipes.core.presentation.details
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkOut
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.HoverInteraction
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,11 +17,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonColors
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,12 +31,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
 import de.malteans.recipes.core.presentation.details.components.CustomCloudDownloadIcon
 import de.malteans.recipes.core.presentation.details.components.CustomDownloadDoneIcon
+import de.malteans.recipes.core.presentation.details.components.CustomOpenInBrowserIcon
 import de.malteans.recipes.core.presentation.details.components.ImageBackground
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -96,70 +91,119 @@ fun DetailsScreen(
     onAction: (DetailsAction) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     ImageBackground(
         imageUrl = state.recipe?.imageUrl,
         onBackClick = { onAction(DetailsAction.OnBack(state.recipe?.isCloudOnly() == true)) },
-        onEditClick = if ((state.recipe?.id ?: 0L) == 0L) null
-            else { { onAction(DetailsAction.OnEdit) } },
-        onDeleteClick = if ((state.recipe?.id ?: 0L) == 0L) null
-            else { { onAction(DetailsAction.OnDelete) } }
+        rightIcons = @Composable {
+            if (state.recipe?.sourceUrl != null) {
+                IconButton(
+                    onClick = {
+                        val url = state.recipe.sourceUrl
+                        if (url.isNotBlank() && (url.startsWith("https://"))) {
+                            uriHandler.openUri(url)
+                        }
+                    },
+                ) {
+                    Icon(
+                        imageVector = CustomOpenInBrowserIcon,
+                        contentDescription = "Open Source",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            if (state.recipe?.isCloudOnly() == false) {
+                val deleteClicked = remember { mutableStateOf(false) }
+                LaunchedEffect(deleteClicked.value) {
+                    if (deleteClicked.value) {
+                        delay(3000)
+                        deleteClicked.value = false
+                    }
+                }
+                IconButton(
+                    onClick = { onAction(DetailsAction.OnEdit) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Recipe",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+                IconButton(
+                    onClick = {
+                        if (!deleteClicked.value) {
+                            deleteClicked.value = true
+                        } else {
+                            onAction(DetailsAction.OnDelete)
+                            deleteClicked.value = false
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Recipe",
+                        tint = if (deleteClicked.value) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+            AnimatedVisibility(
+                visible = state.recipe?.isCloudOnly() == true,
+                enter = EnterTransition.None,
+                exit = slideOutVertically(
+                    targetOffsetY = { -it },
+                    animationSpec = tween(
+                        delayMillis = 2000,
+                        durationMillis = 300,
+                    )
+                ),
+            ) {
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            onAction(DetailsAction.OnSave)
+                        }
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (state.recipe?.isCloudOnly() == true) CustomCloudDownloadIcon
+                            else CustomDownloadDoneIcon,
+                        contentDescription = "Save Recipe",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
+            }
+        },
     ) { enableScrolling, dragProgress ->
         Column(
             modifier = Modifier
                 .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 0.dp)
         ) {
             state.recipe?.let { recipe ->
-                Row(
+                Column(
                     modifier = Modifier
-                        .padding(vertical = 4.dp, horizontal = 8.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                    ) {
+                    Text(
+                        text = recipe.name,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+
+                    if (recipe.description.isNotBlank()) {
                         Text(
-                            text = recipe.name,
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        if (recipe.description.isNotBlank()) {
-                            Text(
-                                text = recipe.description,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                        Text(
-                            text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
-                                else if (recipe.isLocalOnly()) stringResource(Res.string.local_recipe)
-                                else if (recipe.editedFromCloud) stringResource(Res.string.edited_cloud_recipe)
-                                else stringResource(Res.string.saved_cloud_recipe),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
+                            text = recipe.description,
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    AnimatedVisibility(
-                        visible = recipe.isCloudOnly(),
-                        enter = EnterTransition.None,
-                        exit = fadeOut(animationSpec = tween(
-                            delayMillis = 3000,
-                            durationMillis = 500
-                        ))
-                    ) {
-                        Column {
-                            IconButton( onClick = { onAction(DetailsAction.OnSave) } ) {
-                                Icon(
-                                    imageVector = if (recipe.isCloudOnly()) CustomCloudDownloadIcon
-                                        else CustomDownloadDoneIcon,
-                                    contentDescription = "Save cloud recipe locally",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier
-                                        .size(32.dp)
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
+                            else if (recipe.isLocalOnly()) stringResource(Res.string.local_recipe)
+                            else if (recipe.editedFromCloud) stringResource(Res.string.edited_cloud_recipe)
+                            else stringResource(Res.string.saved_cloud_recipe),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
                 // -------------------------------------------
                 Box(
@@ -194,12 +238,11 @@ fun DetailsScreen(
                                 .weight(1f)
                         ) {
                             Text(
-                                text = "Rating: ${recipe.rating}",
+                                text = "Rating: ${recipe.rating ?: "–"}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Servings: ${recipe.servings}",
+                                text = "Servings: ${recipe.servings ?: "–"}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }

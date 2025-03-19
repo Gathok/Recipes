@@ -9,6 +9,7 @@ data class RecipeEntity(
     val id: Long = 0L,
     val cloudId: Long? = null, // New field: holds the cloud recipe id if available
     val editedFromCloud: Boolean = false,
+    val sourceUrl: String? = null,
     val name: String,
     val description: String,
     val imageUrl: String,

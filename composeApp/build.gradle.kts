@@ -99,6 +99,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 3412010
         versionName = "0.1-pre0"
+        buildConfigField("String", "API_TOKEN", "\"OeDJFFAO9pcV0nq2RsJE\"")
     }
     packaging {
         resources {
@@ -116,6 +117,9 @@ android {
     }
     androidResources {
         generateLocaleConfig = true
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 

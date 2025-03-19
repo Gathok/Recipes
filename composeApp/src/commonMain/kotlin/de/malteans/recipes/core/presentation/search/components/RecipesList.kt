@@ -37,7 +37,7 @@ fun RecipesList(
     ) {
         items(
             items = recipes,
-            key = { it.id }
+            key = { Pair(it.id, it.cloudId) }
         ) { recipe ->
             val visible = remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {

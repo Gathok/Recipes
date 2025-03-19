@@ -14,4 +14,5 @@ data class RecipeDto (
     val totalTime: Int?,
     val servings: Int?,
     val rating: Int?,
+    val sourceUrl: String?,
 )

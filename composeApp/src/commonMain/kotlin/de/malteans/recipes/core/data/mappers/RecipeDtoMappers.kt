@@ -18,6 +18,7 @@ fun RecipeDto.toDomain(): Recipe {
     return Recipe(
         id = 0L,                // Not saved locally yet, so local id remains 0
         cloudId = this.id,       // Use the cloud id from the DTO
+        sourceUrl = this.sourceUrl,
         name = this.name,
         description = this.description,
         imageUrl = this.imageUrl,
