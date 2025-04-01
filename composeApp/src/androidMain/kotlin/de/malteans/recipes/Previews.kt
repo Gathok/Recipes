@@ -1,13 +1,22 @@
 package de.malteans.recipes
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
 import de.malteans.recipes.core.domain.Ingredient
+import de.malteans.recipes.core.domain.PlannedRecipe
 import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.details.DetailsScreen
 import de.malteans.recipes.core.presentation.details.DetailsState
+import de.malteans.recipes.core.presentation.plan.components.PlannedDayData
+import de.malteans.recipes.core.presentation.plan.components.PlannedDayItem
+import de.malteans.recipes.core.presentation.plan.components.TimeOfDay
 import de.malteans.recipes.core.presentation.search.components.RecipeListItem
 import de.malteans.recipes.theme.RecipesTheme
+import kotlinx.datetime.LocalDateTime
 
 val recipe = Recipe(
     name = "Spaghetti Carbonara",
@@ -52,6 +61,33 @@ private fun RecipeListItemPreview() {
             recipe = recipe,
             onClick = {},
             onLongClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun PlannedDayItemPreview() {
+    RecipesTheme(
+        useDarkTheme = true
+    ) {
+        var isExpanded by remember { mutableStateOf(true) }
+
+        val date = LocalDateTime(2025, 4, 1, 0, 0)
+            .date
+        PlannedDayItem(
+            data = PlannedDayData(
+                date = date,
+                recipes = listOf(PlannedRecipe(
+                    recipe = recipe,
+                    date = date,
+                    timeOfDay = TimeOfDay.LUNCH
+                )),
+                isExpanded = isExpanded
+            ),
+            onRecipeShow = { },
+            onEditPlan = { },
+            onExpand = { isExpanded = it },
         )
     }
 }

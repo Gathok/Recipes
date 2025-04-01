@@ -4,4 +4,6 @@ import de.malteans.recipes.core.domain.Recipe
 
 data class DetailsState(
     val recipe: Recipe? = null,
+
+    val showPlanDialog: Boolean = false,
 )

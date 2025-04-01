@@ -1,21 +1,27 @@
 package de.malteans.recipes.core.data.repository
 
 import de.malteans.recipes.core.data.database.RecipeDao
+import de.malteans.recipes.core.data.database.entities.PlanEntity
 import de.malteans.recipes.core.data.database.entities.RecipeIngredientEntity
 import de.malteans.recipes.core.data.database.entities.RecipeStepEntity
 import de.malteans.recipes.core.data.mappers.toDomain
+import de.malteans.recipes.core.data.mappers.toEntity
 import de.malteans.recipes.core.data.mappers.toIngredientEntity
 import de.malteans.recipes.core.data.mappers.toRecipeEntity
 import de.malteans.recipes.core.data.network.RemoteRecipeDataSource
 import de.malteans.recipes.core.domain.Ingredient
+import de.malteans.recipes.core.domain.PlannedRecipe
 import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.domain.RecipeRepository
 import de.malteans.recipes.core.domain.errorHandling.DataError
 import de.malteans.recipes.core.domain.errorHandling.Result
 import de.malteans.recipes.core.domain.errorHandling.map
+import de.malteans.recipes.core.presentation.plan.components.TimeOfDay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 
 class DefaultRecipeRepository(
     private val dao: RecipeDao,
@@ -67,9 +73,7 @@ class DefaultRecipeRepository(
         return recipeId
     }
 
-    // New function: If the recipe is a cloud recipe and has not been saved locally,
-    // check if a recipe with the same cloudId exists and return its id.
-    // Otherwise, upsert the recipe.
+    // New function: Save a cloud recipe by upserting it with fromCloud=true.
     override suspend fun saveCloudRecipe(recipe: Recipe): Long {
         return upsertRecipe(recipe, fromCloud = true)
     }
@@ -99,8 +103,9 @@ class DefaultRecipeRepository(
         return dao.upsertIngredient(ingredient.toIngredientEntity())
     }
 
+    // Fixed: Now calling the correct DAO method to delete an ingredient.
     override suspend fun deleteIngredientById(id: Long) {
-        dao.deleteRecipe(id)
+        dao.deleteIngredient(id)
     }
 
     override fun getAllIngredients(): Flow<List<Ingredient>> {
@@ -128,5 +133,41 @@ class DefaultRecipeRepository(
                         }
                     }
             }
+    }
+
+    // New functions for planning recipes:
+
+    // Insert a new plan record for the given recipe and date.
+    override suspend fun planRecipe(recipeId: Long, date: LocalDate, timeOfDay: TimeOfDay): Long {
+        return dao.upsertPlan(PlanEntity(recipeId = recipeId, date = date, timeOfDay = timeOfDay))
+    }
+
+    override suspend fun planRecipe(plannedRecipe: PlannedRecipe): Long {
+        return dao.upsertPlan(plannedRecipe.toEntity())
+    }
+
+    // Update an existing plan with new information.
+    override suspend fun updatePlan(plannedRecipe: PlannedRecipe) {
+        dao.upsertPlan(plannedRecipe.toEntity())
+    }
+
+    // Remove a planned recipe by its plan id.
+    override suspend fun deletePlan(planId: Long) {
+        dao.deletePlan(planId)
+    }
+
+    // Combine plan records with recipes (using details) to produce a list of planned recipes.
+    override fun getPlannedRecipes(): Flow<List<PlannedRecipe>> {
+        return combine(
+            dao.getAllPlans(),
+            dao.getAllRecipesWithDetails()
+        ) { planEntities, recipesWithDetails ->
+            planEntities.mapNotNull { planEntity ->
+                val recipeWithDetails = recipesWithDetails.find { it.recipe.id == planEntity.recipeId }
+                recipeWithDetails?.toDomain()?.let { recipe ->
+                    planEntity.toDomain(recipe)
+                }
+            }
+        }
     }
 }

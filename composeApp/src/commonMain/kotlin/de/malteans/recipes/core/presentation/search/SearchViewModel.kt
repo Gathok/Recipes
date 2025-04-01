@@ -46,18 +46,20 @@ class SearchViewModel(
                 }
             }
             is SearchAction.OnTabSelected -> {
-                viewModelScope.launch {
-                    _state.update {
-                        it.copy(
-                            selectedTabIndex = action.index,
-                            cloudError = null,
-                        )
-                    }
-                    _searchJob?.cancel()
-                    _searchJob = when (action.index) {
-                        0 -> fetchLocalRecipes(state.value.searchQuery)
-                        1 -> fetchCloudRecipes(state.value.searchQuery)
-                        else -> throw IllegalStateException("Invalid tab index: ${action.index}")
+                if (_state.value.selectedTabIndex != action.index) {
+                    viewModelScope.launch {
+                        _state.update {
+                            it.copy(
+                                selectedTabIndex = action.index,
+                                cloudError = null,
+                            )
+                        }
+                        _searchJob?.cancel()
+                        _searchJob = when (action.index) {
+                            0 -> fetchLocalRecipes(state.value.searchQuery)
+                            1 -> fetchCloudRecipes(state.value.searchQuery)
+                            else -> throw IllegalStateException("Invalid tab index: ${action.index}")
+                        }
                     }
                 }
             }

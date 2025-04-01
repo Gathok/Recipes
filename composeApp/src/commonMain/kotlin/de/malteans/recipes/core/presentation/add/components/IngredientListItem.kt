@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -24,49 +25,51 @@ fun IngredientListItem(
     amount: Double?,
     unit: String?,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1.5f)
-        ) {
-            Text(
-                text = ingredient.name,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Spacer(modifier = Modifier.width(6.dp))
-        Column(
+        Row(
             modifier = Modifier
                 .weight(1f)
+                .clickable { onEdit() }
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "${amount?.toNiceString() ?: ""} ${unit?: ""}")
-        }
-        Column {
+            Column(
+                modifier = Modifier
+                    .weight(1.5f)
+            ) {
+                Text(
+                    text = ingredient.name,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(modifier = Modifier.width(6.dp))
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
+                Text(text = "${amount?.toNiceString() ?: ""} ${unit?: ""}")
+            }
             Icon(
                 imageVector = Icons.Default.Edit,
                 contentDescription = "Edit",
-                modifier = Modifier
-                    .clickable {
-                        onEdit()
-                    }
             )
         }
-        Spacer(modifier = Modifier.width(4.dp))
-        Column {
+        Row(
+            modifier = Modifier
+                .clickable { onDelete() }
+                .padding(vertical = 4.dp)
+        ) {
+            Spacer(modifier = Modifier.width(4.dp))
             Icon(
                 imageVector = Icons.Default.Delete,
                 contentDescription = "Delete",
-                modifier = Modifier
-                    .clickable {
-                        onDelete()
-                    }
             )
         }
     }

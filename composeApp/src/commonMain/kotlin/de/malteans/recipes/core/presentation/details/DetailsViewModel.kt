@@ -2,6 +2,7 @@ package de.malteans.recipes.core.presentation.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.malteans.recipes.core.domain.PlannedRecipe
 import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.domain.RecipeRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -76,6 +78,26 @@ class DetailsViewModel(
                 viewModelScope.launch {
                     val id = repository.saveCloudRecipe(recipe)
                     setRecipeId(id)
+                }
+            }
+            is DetailsAction.ShowPlanDialog -> {
+                _state.update { it.copy(
+                    showPlanDialog = true
+                ) }
+            }
+            is DetailsAction.DismissPlanDialog -> {
+                _state.update { it.copy(
+                    showPlanDialog = false
+                ) }
+            }
+            is DetailsAction.OnPlan -> {
+                val recipe = state.value.recipe ?: return
+                viewModelScope.launch {
+                    repository.planRecipe(PlannedRecipe(
+                        recipe = recipe,
+                        date = action.date,
+                        timeOfDay = action.timeOfDay,
+                    ))
                 }
             }
             else -> TODO()

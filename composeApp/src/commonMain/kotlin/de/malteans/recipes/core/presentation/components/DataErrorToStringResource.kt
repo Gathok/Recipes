@@ -21,5 +21,5 @@ fun DataError.toUiText(): UiText {
         DataError.Remote.UNKNOWN -> Res.string.error_unknown
     }
     
-    return UiText.StringResourceId(stringRes)
+    return UiText.FromStringResource(stringRes)
 }

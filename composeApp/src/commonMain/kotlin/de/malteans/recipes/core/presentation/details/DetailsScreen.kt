@@ -5,6 +5,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,8 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,13 +39,16 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.malteans.recipes.core.domain.Recipe
+import de.malteans.recipes.core.presentation.components.CustomPlanDialog
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
 import de.malteans.recipes.core.presentation.details.components.CustomCloudDownloadIcon
 import de.malteans.recipes.core.presentation.details.components.CustomDownloadDoneIcon
 import de.malteans.recipes.core.presentation.details.components.CustomOpenInBrowserIcon
 import de.malteans.recipes.core.presentation.details.components.ImageBackground
+import de.malteans.recipes.core.presentation.plan.components.toUiText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
@@ -85,6 +92,7 @@ fun DetailsScreenRoot(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
     state: DetailsState,
@@ -93,18 +101,21 @@ fun DetailsScreen(
     val scope = rememberCoroutineScope()
     val uriHandler = LocalUriHandler.current
 
+    if (state.showPlanDialog && state.recipe != null) {
+        CustomPlanDialog(
+            onDismiss = { onAction(DetailsAction.DismissPlanDialog) },
+            onSubmit = { onAction(DetailsAction.OnPlan(it.date, it.timeOfDay)) },
+            initialRecipe = state.recipe,
+        )
+    }
+
     ImageBackground(
         imageUrl = state.recipe?.imageUrl,
         onBackClick = { onAction(DetailsAction.OnBack(state.recipe?.isCloudOnly() == true)) },
         rightIcons = @Composable {
-            if (state.recipe?.sourceUrl != null) {
+            if (state.recipe?.sourceUrl != null && state.recipe.sourceUrl.isNotBlank() && state.recipe.sourceUrl.startsWith("https://")) {
                 IconButton(
-                    onClick = {
-                        val url = state.recipe.sourceUrl
-                        if (url.isNotBlank() && (url.startsWith("https://"))) {
-                            uriHandler.openUri(url)
-                        }
-                    },
+                    onClick = { uriHandler.openUri(state.recipe.sourceUrl) },
                 ) {
                     Icon(
                         imageVector = CustomOpenInBrowserIcon,
@@ -181,29 +192,71 @@ fun DetailsScreen(
                 .padding(start = 8.dp, top = 8.dp, end = 8.dp, bottom = 0.dp)
         ) {
             state.recipe?.let { recipe ->
-                Column(
+                Row(
                     modifier = Modifier
+                        .fillMaxWidth()
                         .padding(vertical = 4.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = recipe.name,
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-
-                    if (recipe.description.isNotBlank()) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                    ) {
                         Text(
-                            text = recipe.description,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = recipe.name,
+                            style = MaterialTheme.typography.headlineSmall
                         )
-                    }
-                    Text(
-                        text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
+
+                        if (recipe.description.isNotBlank()) {
+                            Text(
+                                text = recipe.description,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Text(
+                            text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
                             else if (recipe.isLocalOnly()) stringResource(Res.string.local_recipe)
                             else if (recipe.editedFromCloud) stringResource(Res.string.edited_cloud_recipe)
                             else stringResource(Res.string.saved_cloud_recipe),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (recipe.sourceUrl != null && recipe.sourceUrl.isNotBlank() && recipe.sourceUrl.startsWith("https://")) {
+                            Icon(
+                                imageVector = CustomOpenInBrowserIcon,
+                                contentDescription = "Open Source",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                modifier = Modifier
+                                    .clickable { uriHandler.openUri(recipe.sourceUrl) }
+                                    .size(28.dp)
+                            )
+                        }
+                        if (!recipe.isCloudOnly()) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Recipe",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                modifier = Modifier
+                                    .clickable { onAction(DetailsAction.OnEdit) }
+                                    .size(28.dp)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Plan Recipe",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                modifier = Modifier
+                                    .clickable { onAction(DetailsAction.ShowPlanDialog) }
+                                    .size(28.dp)
+                            )
+                        }
+                    }
                 }
                 // -------------------------------------------
                 Box(
@@ -341,4 +394,10 @@ fun Recipe.isCloudOnly(): Boolean {
 }
 fun Recipe.isLocalOnly(): Boolean {
     return this.id != 0L && this.cloudId == null
+}
+
+@Composable
+fun LocalDate.asString(): String {
+    return "${this.dayOfWeek.toUiText().asString()}, " +
+            "${this.dayOfMonth.toString().padStart(2, '0')}.${this.monthNumber.toString().padStart(2, '0')}.${this.year}"
 }

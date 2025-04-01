@@ -55,7 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import de.malteans.recipes.core.presentation.add.components.IngredientDropdown
+import de.malteans.recipes.core.presentation.components.SearchableDropdown
 import de.malteans.recipes.core.presentation.add.components.IngredientListItem
 import de.malteans.recipes.core.presentation.components.CustomDialog
 import de.malteans.recipes.core.presentation.components.SnackbarManager
@@ -155,15 +155,18 @@ fun AddScreen(
         }
 
         CustomDialog(
-            title = { Text(
-                text = stringResource(
-                    if (state.isEditingIngredient) Res.string.edit_dialog_title
-                        else Res.string.add_dialog_title,
-                    state.currentIngredient!!.name),
-                style = MaterialTheme.typography.titleMedium,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            ) },
+            title = {
+                Text(
+                    text = stringResource(
+                        if (state.isEditingIngredient) Res.string.edit_dialog_title
+                            else Res.string.add_dialog_title,
+                        state.currentIngredient!!.name),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            },
             rightIcon = {
                 Icon(
                     imageVector = Icons.Default.Check,
@@ -178,66 +181,51 @@ fun AddScreen(
                 onAction(AddAction.OnIngredientDialogDismiss)
             },
         ) {
-            Column(
+            OutlinedTextField(
+                value = amount,
+                onValueChange = {
+                    amount = it
+                },
+                singleLine = true,
+                label = {
+                    Text(stringResource(Res.string.amount))
+                },
                 modifier = Modifier
-                    .padding(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = amount,
-                        onValueChange = {
-                            amount = it
-                        },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(Res.string.amount))
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                                onEndRequest(isValid)
-                            }
-                        ),
-                        isError = !(amount.isBlank() || (amount.toDoubleOrNull() != null && amount.toDouble() > 0))
-                    )
-                }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    OutlinedTextField(
-                        value = unit,
-                        onValueChange = {
-                            unit = it
-                        },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(Res.string.unit))
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        isError = unit.isBlank(),
-                        keyboardOptions = KeyboardOptions(
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                focusManager.clearFocus()
-                                onEndRequest(isValid)
-                            }
-                        ),
-                    )
-                }
-            }
+                    .fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        onEndRequest(isValid)
+                    }
+                ),
+                isError = !(amount.isBlank() || (amount.toDoubleOrNull() != null && amount.toDouble() > 0))
+            )
+            OutlinedTextField(
+                value = unit,
+                onValueChange = {
+                    unit = it
+                },
+                singleLine = true,
+                label = {
+                    Text(stringResource(Res.string.unit))
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                isError = unit.isBlank(),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        focusManager.clearFocus()
+                        onEndRequest(isValid)
+                    }
+                ),
+            )
         }
     }
 
@@ -589,7 +577,7 @@ fun AddScreen(
                                         .padding(16.dp)
                                         .fillMaxSize()
                                 ) {
-                                    IngredientDropdown(
+                                    SearchableDropdown(
                                         options = state.allIngredients.associate { it to it.name },
                                         selectedOption = Pair("", ""),
                                         onValueChanged = {
@@ -604,7 +592,7 @@ fun AddScreen(
                                             onAction(AddAction.OnIngredientCreate(ingredient))
                                             onAction(AddAction.OnIngredientAdd(ingredient))
                                         },
-                                        label = stringResource(Res.string.add_ingredient) + "…",
+                                        label = { Text(text = stringResource(Res.string.add_ingredient) + "…") },
                                         modifier = Modifier
                                             .fillMaxWidth()
                                     )
@@ -632,7 +620,6 @@ fun AddScreen(
                                                         onAction(AddAction.OnIngredientRemove(ingredient))
                                                     }
                                                 )
-                                                Spacer(modifier = Modifier.height(6.dp))
                                             }
                                         }
                                     } else {

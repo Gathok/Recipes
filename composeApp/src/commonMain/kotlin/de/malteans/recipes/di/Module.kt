@@ -11,7 +11,7 @@ import de.malteans.recipes.core.domain.RecipeRepository
 import de.malteans.recipes.core.presentation.SelectedRecipeViewModel
 import de.malteans.recipes.core.presentation.main.MainViewModel
 import de.malteans.recipes.core.presentation.search.SearchViewModel
-import de.malteans.recipes.plan.presentation.plan.PlanViewModel
+import de.malteans.recipes.core.presentation.plan.PlanViewModel
 import de.malteans.recipes.core.presentation.add.AddViewModel
 import de.malteans.recipes.core.presentation.details.DetailsViewModel
 import org.koin.core.module.Module

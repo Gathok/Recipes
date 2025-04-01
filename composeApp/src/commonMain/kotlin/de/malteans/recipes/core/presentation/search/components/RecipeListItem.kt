@@ -64,7 +64,7 @@ fun RecipeListItem(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f),
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         Row(
@@ -182,7 +182,9 @@ fun RecipeListItem(
                             text = if (recipe.workTime != null && recipe.workTime != recipe.totalTime)
                                     "${recipe.workTime} / ${recipe.totalTime ?: "–"} ${stringResource(Res.string.min)}"
                                 else "${recipe.totalTime ?: "–"} ${stringResource(Res.string.min)}",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Clip,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))

@@ -8,6 +8,6 @@ data class SearchState(
     val selectedTabIndex: Int = 0,
     val localRecipes: List<Recipe> = emptyList(),
     val cloudRecipes: List<Recipe> = emptyList(),
-    val isLoading: Boolean = false,
+    val isLoading: Boolean = true,
     val cloudError: DataError? = null,
 )

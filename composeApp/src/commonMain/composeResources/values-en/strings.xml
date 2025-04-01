@@ -25,8 +25,8 @@
     <string name="preparation">Preparation</string>
     <string name="add_recipe">Add Recipe</string>
     <string name="edit_recipe">Edit Recipe</string>
-    <string name="add_dialog_title">Add %1$s</string>
-    <string name="edit_dialog_title">Edit %1$s</string>
+    <string name="add_dialog_title">Add '%1$s'</string>
+    <string name="edit_dialog_title">Edit '%1$s'</string>
     <string name="ingredient">Ingredient</string>
     <string name="amount">Amount</string>
     <string name="unit">Unit</string>
@@ -42,4 +42,24 @@
     <string name="cloud_recipe">Cloud recipe</string>
     <string name="edited_cloud_recipe">Edited cloud recipe</string>
     <string name="saved_cloud_recipe">Saved cloud recipe</string>
+    <string name="breakfast">Breakfast</string>
+    <string name="morning_snack">Morning Snack</string>
+    <string name="lunch">Lunch</string>
+    <string name="afternoon_snack">Afternoon Snack</string>
+    <string name="dinner">Dinner</string>
+    <string name="evening_snack">Evening Snack</string>
+    <string name="monday">Monday</string>
+    <string name="tuesday">Tuesday</string>
+    <string name="wednesday">Wednesday</string>
+    <string name="thursday">Thursday</string>
+    <string name="friday">Friday</string>
+    <string name="saturday">Saturday</string>
+    <string name="sunday">Sunday</string>
+    <string name="plan_recipe">Plan recipe</string>
+    <string name="date">Date</string>
+    <string name="time_of_day">Time of day</string>
+    <string name="select_date">Select date</string>
+    <string name="cancel">Cancel</string>
+    <string name="edit_plan">Edit Plan</string>
+    <string name="recipe">Recipe</string>
 </resources>

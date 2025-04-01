@@ -25,17 +25,13 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import de.malteans.recipes.app.Route
 import de.malteans.recipes.core.presentation.SelectedRecipeViewModel
-import de.malteans.recipes.core.presentation.add.AddAction
 import de.malteans.recipes.core.presentation.add.AddScreenRoot
-import de.malteans.recipes.core.presentation.add.AddViewModel
 import de.malteans.recipes.core.presentation.add.EditScreenRoot
 import de.malteans.recipes.core.presentation.details.DetailsAction
 import de.malteans.recipes.core.presentation.details.DetailsScreenRoot
 import de.malteans.recipes.core.presentation.details.DetailsViewModel
-import de.malteans.recipes.core.presentation.search.SearchAction
+import de.malteans.recipes.core.presentation.plan.PlanScreenRoot
 import de.malteans.recipes.core.presentation.search.SearchScreenRoot
-import de.malteans.recipes.core.presentation.search.SearchViewModel
-import de.malteans.recipes.plan.presentation.plan.PlanScreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -62,7 +58,11 @@ fun NavGraph(
                 popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(durationMillis = 300, easing = EaseInOut)) },
                 popExitTransition = { slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(durationMillis = 300, easing = EaseInOut)) }
             ) {
-                PlanScreen()
+                PlanScreenRoot(
+                    onRecipeShow = { recipeId ->
+                        navController.navigate(Route.DetailScreen(recipeId))
+                    }
+                )
                 setCurScreen(Screen.Plan)
             }
             // Search Screen: fade in/out

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,7 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.malteans.recipes.core.domain.Recipe
@@ -62,11 +66,11 @@ fun SearchScreen(
     state: SearchState,
     onAction: (SearchAction) -> Unit,
 ) {
-    val keyboardController = androidx.compose.ui.platform.LocalSoftwareKeyboardController.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     val pagerState = rememberPagerState { 2 }
-    val localRecipesListState = androidx.compose.foundation.lazy.rememberLazyListState()
-    val cloudRecipesListState = androidx.compose.foundation.lazy.rememberLazyListState()
+    val localRecipesListState = rememberLazyListState()
+    val cloudRecipesListState = rememberLazyListState()
 
     LaunchedEffect(state.selectedTabIndex) {
         pagerState.animateScrollToPage(state.selectedTabIndex)
@@ -85,7 +89,7 @@ fun SearchScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
             .statusBarsPadding(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         SearchBar(
             searchQuery = state.searchQuery,
@@ -110,7 +114,7 @@ fun SearchScreen(
             )
         ) {
             Column(
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 TabRow(
                     selectedTabIndex = state.selectedTabIndex,
@@ -167,7 +171,7 @@ fun SearchScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize(),
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+                        contentAlignment = Alignment.Center
                     ) {
                         if (state.isLoading) {
                             CircularProgressIndicator()
@@ -181,15 +185,15 @@ fun SearchScreen(
                                             } else {
                                                 stringResource(Res.string.no_recipes_for_search)
                                             },
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            textAlign = TextAlign.Center,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                     } else {
                                         // Note: onRecipeClick now sends the full Recipe object
                                         RecipesList(
                                             recipes = state.localRecipes,
-                                            onRecipeClick = {
-                                                onAction(SearchAction.OnRecipeClick(it))
+                                            onRecipeClick = { recipe ->
+                                                onAction(SearchAction.OnRecipeClick(recipe))
                                             },
                                             modifier = Modifier
                                                 .fillMaxSize(),
@@ -207,14 +211,14 @@ fun SearchScreen(
                                             } else {
                                                 stringResource(Res.string.no_search_query)
                                             },
-                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            textAlign = TextAlign.Center,
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                     } else {
                                         RecipesList(
                                             recipes = state.cloudRecipes,
-                                            onRecipeClick = {
-                                                onAction(SearchAction.OnRecipeClick(it))
+                                            onRecipeClick = { recipe ->
+                                                onAction(SearchAction.OnRecipeClick(recipe))
                                             },
                                             modifier = Modifier
                                                 .fillMaxSize(),

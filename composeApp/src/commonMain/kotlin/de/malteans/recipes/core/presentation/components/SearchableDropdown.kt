@@ -1,4 +1,4 @@
-package de.malteans.recipes.core.presentation.add.components
+package de.malteans.recipes.core.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
@@ -21,14 +21,15 @@ import androidx.compose.ui.text.input.ImeAction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IngredientDropdown(
-    label: String,
+fun SearchableDropdown(
+    label: @Composable (() -> Unit)? = null,
     selectedOption: Pair<Any, String>,
     options: Map<Any, String>,
     onValueChanged: (Any) -> Unit,
-    onValueAdded: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
+    onValueAdded: ((String) -> Unit)? = null,
+    enabled: Boolean = true,
     optionIcon: @Composable ((Any) -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var currentInput by remember { mutableStateOf(selectedOption.second) }
@@ -44,6 +45,7 @@ fun IngredientDropdown(
         modifier = modifier
     ) {
         OutlinedTextField(
+            enabled = enabled,
             readOnly = !expanded,
             value = if (expanded) currentInput else selectedOption.second,
             onValueChange = {
@@ -51,10 +53,10 @@ fun IngredientDropdown(
             },
             leadingIcon = if (optionIcon != null) { { optionIcon(selectedOption.first) } }
             else null,
-            label = { Text(label) },
+            label = label,
             colors = OutlinedTextFieldDefaults.colors(),
             modifier = Modifier
-                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = true)
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable, enabled = enabled)
                 .fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(
@@ -67,7 +69,7 @@ fun IngredientDropdown(
                     val option = options.entries.find { it.value.lowercase() == currentInput.lowercase() }?.key
                     if (currentInput.isNotBlank()) {
                         if (option == null) {
-                            onValueAdded(currentInput)
+                            onValueAdded?.invoke(currentInput)
                         } else {
                             onValueChanged(option)
                         }
@@ -83,20 +85,21 @@ fun IngredientDropdown(
                 focusManager.clearFocus()
             }
         ) {
-            options.toList().forEach { pair ->
-                val (option, text) = pair
-                if (text.contains(currentInput, ignoreCase = true)) {
-                    DropdownMenuItem(
-                        text = { Text(text = text) },
-                        onClick = {
-                            expanded = false
-                            currentInput = text
-                            focusManager.clearFocus()
-                            onValueChanged(option)
-                        },
-                        leadingIcon = if (optionIcon != null) { { optionIcon(option) } }
-                        else null
-                    )
+            if (currentInput.isNotBlank()) {
+                options.forEach { (option, text) ->
+                    if (text.contains(currentInput, ignoreCase = true)) {
+                        DropdownMenuItem(
+                            text = { Text(text = text) },
+                            onClick = {
+                                expanded = false
+                                currentInput = text
+                                focusManager.clearFocus()
+                                onValueChanged(option)
+                            },
+                            leadingIcon = if (optionIcon != null) { { optionIcon(option) } }
+                                else null
+                        )
+                    }
                 }
             }
         }

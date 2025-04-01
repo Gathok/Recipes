@@ -7,8 +7,8 @@ import org.jetbrains.compose.resources.stringResource
 
 sealed interface UiText {
     data class DynamicString(val value: String): UiText
-    class StringResourceId(
-        val id: StringResource,
+    class FromStringResource(
+        val resource: StringResource,
         val args: Array<Any> = arrayOf()
     ): UiText
 
@@ -16,7 +16,7 @@ sealed interface UiText {
     fun asString(): String {
         return when(this) {
             is DynamicString -> value
-            is StringResourceId -> stringResource(resource = id, formatArgs = args)
+            is FromStringResource -> stringResource(resource = resource, formatArgs = args)
         }
     }
 }

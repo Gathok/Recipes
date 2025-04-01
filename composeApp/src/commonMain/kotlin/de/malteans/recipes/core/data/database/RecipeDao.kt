@@ -4,8 +4,9 @@ import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
-import de.malteans.recipes.core.data.database.entities.RecipeEntity
 import de.malteans.recipes.core.data.database.entities.IngredientEntity
+import de.malteans.recipes.core.data.database.entities.PlanEntity
+import de.malteans.recipes.core.data.database.entities.RecipeEntity
 import de.malteans.recipes.core.data.database.entities.RecipeIngredientEntity
 import de.malteans.recipes.core.data.database.entities.RecipeStepEntity
 import kotlinx.coroutines.flow.Flow
@@ -53,7 +54,7 @@ interface RecipeDao {
     @Query("SELECT * FROM RecipeEntity WHERE cloudId = :cloudId LIMIT 1")
     suspend fun getRecipeByCloudId(cloudId: Long): RecipeEntity?
 
-    // Ingredient Methods ----------------------------------------------
+    // Ingredient Methods -------------------------------------------------------------------------
     @Upsert
     suspend fun upsertIngredient(ingredient: IngredientEntity): Long
 
@@ -62,4 +63,14 @@ interface RecipeDao {
 
     @Query("SELECT * FROM ingrediententity")
     fun getAllIngredients(): Flow<List<IngredientEntity>>
+
+    // Plan Methods -------------------------------------------------------------------------------
+    @Upsert
+    suspend fun upsertPlan(plan: PlanEntity): Long
+
+    @Query("DELETE FROM PlanEntity WHERE id = :planId")
+    suspend fun deletePlan(planId: Long)
+
+    @Query("SELECT * FROM PlanEntity")
+    fun getAllPlans(): Flow<List<PlanEntity>>
 }
