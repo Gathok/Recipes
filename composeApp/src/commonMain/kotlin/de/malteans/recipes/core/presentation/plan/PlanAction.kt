@@ -14,5 +14,5 @@ sealed interface PlanAction {
 
     data class OnExpandDay(val date: LocalDate, val expand: Boolean = true) : PlanAction
 
-    data object OnDeleteAllPlannedRecipes : PlanAction
+    data object OnDeleteAllPlans : PlanAction
 }

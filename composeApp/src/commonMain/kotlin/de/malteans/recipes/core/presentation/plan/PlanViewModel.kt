@@ -80,7 +80,7 @@ class PlanViewModel(
                     else null
                 }
             }
-            is PlanAction.OnDeleteAllPlannedRecipes -> {
+            is PlanAction.OnDeleteAllPlans -> {
                 viewModelScope.launch {
                     _allPlannedRecipes.first().forEach {
                         repository.deletePlan(it.id)

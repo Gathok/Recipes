@@ -56,4 +56,5 @@
     <string name="cancel">Abbrechen</string>
     <string name="edit_plan">Plan bearbeiten</string>
     <string name="recipe">Rezept</string>
+    <string name="no_planned_recipes">Keine geplanten Rezepte.</string>
 </resources>
