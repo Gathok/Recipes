@@ -6,4 +6,7 @@ sealed interface SearchAction {
     data class OnSearchQueryChange(val query: String) : SearchAction
     data class OnTabSelected(val index: Int) : SearchAction
     data class OnRecipeClick(val recipe: Recipe) : SearchAction
+    data object OnRefreshCloud : SearchAction
+
+    data object ResetForceScrollTo : SearchAction
 }

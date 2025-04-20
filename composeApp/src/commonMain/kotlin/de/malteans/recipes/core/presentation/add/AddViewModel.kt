@@ -3,6 +3,7 @@ package de.malteans.recipes.core.presentation.add
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.malteans.recipes.core.domain.Recipe
+import de.malteans.recipes.core.domain.RecipeIngredientItem
 import de.malteans.recipes.core.domain.RecipeRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,38 +41,34 @@ class AddViewModel(
         )
 
     suspend fun onRecipeAdd(): Long {
-        val state = state.value
-        val recipe = Recipe(
-            id = state.editingRecipeId ?: 0L,
-            cloudId = state.cloudId,
-            editedFromCloud = state.cloudId != null,
-            name = state.name,
-            description = state.description,
-            imageUrl = state.imageUrl,
-            ingredients = state.ingredients,
-            steps = state.steps,
-            servings = state.servings,
-            workTime = state.workTime,
-            totalTime = state.totalTime,
-            rating = state.rating,
+        var recipe = _state.value.editingRecipe
+            ?: Recipe()
+        recipe = recipe.copy (
+            name = _state.value.name,
+            description = _state.value.description,
+            imageUrl = _state.value.imageUrl,
+            ingredients = _state.value.ingredients.map { RecipeIngredientItem(it.key, it.value.first, it.value.second) },
+            steps = _state.value.steps,
+            servings = _state.value.servings,
+            workTime = _state.value.workTime,
+            totalTime = _state.value.totalTime,
+            rating = _state.value.rating,
         )
         return repository.upsertRecipe(recipe)
     }
 
     fun loadRecipeForEditing(recipeId: Long) {
-        if (recipeId == _state.value.editingRecipeId && _state.value.editingRecipeId != 0L) {
+        if (recipeId == _state.value.editingRecipe?.id && _state.value.editingRecipe?.id != 0L)
             return
-        }
         viewModelScope.launch {
             val recipe = repository.getRecipeById(recipeId).first()
             _state.update {
                 it.copy(
-                    editingRecipeId = recipe.id,
-                    cloudId = recipe.cloudId,
+                    editingRecipe = recipe,
                     name = recipe.name,
                     description = recipe.description,
                     imageUrl = recipe.imageUrl,
-                    ingredients = recipe.ingredients,
+                    ingredients = recipe.ingredients.associate { it.ingredient to (it.amount to it.overrideUnit) },
                     steps = recipe.steps,
                     workTime = recipe.workTime,
                     totalTime = recipe.totalTime,
@@ -208,7 +205,7 @@ class AddViewModel(
                     )
                 }
             }
-            else -> {}
+            else -> throw IllegalArgumentException("ViewModel does not support this action: $action")
         }
     }
 }

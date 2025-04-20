@@ -3,9 +3,11 @@ package de.malteans.recipes.core.presentation.details
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,35 +37,39 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.components.CustomPlanDialog
+import de.malteans.recipes.core.presentation.components.RatingBar
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
 import de.malteans.recipes.core.presentation.details.components.CustomCloudDownloadIcon
 import de.malteans.recipes.core.presentation.details.components.CustomDownloadDoneIcon
 import de.malteans.recipes.core.presentation.details.components.CustomOpenInBrowserIcon
 import de.malteans.recipes.core.presentation.details.components.ImageBackground
+import de.malteans.recipes.core.presentation.details.components.getState
+import de.malteans.recipes.core.presentation.details.components.isCloudOnly
 import de.malteans.recipes.core.presentation.plan.components.toUiText
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
-import recipes.composeapp.generated.resources.cloud_recipe
-import recipes.composeapp.generated.resources.edited_cloud_recipe
 import recipes.composeapp.generated.resources.ingredients
-import recipes.composeapp.generated.resources.local_recipe
 import recipes.composeapp.generated.resources.min
+import recipes.composeapp.generated.resources.online_rating
 import recipes.composeapp.generated.resources.preparation
-import recipes.composeapp.generated.resources.saved_cloud_recipe
+import recipes.composeapp.generated.resources.rating
+import recipes.composeapp.generated.resources.servings
 
 @Composable
 fun DetailsScreenRoot(
     viewModel: DetailsViewModel = koinViewModel(),
-    onBack: (Boolean) -> Unit,
+    onBack: (Pair<Long, Long?>?) -> Unit,
     onEdit: (Long) -> Unit,
     onSave: () -> Unit,
     recipeId: Long?,
@@ -71,17 +77,17 @@ fun DetailsScreenRoot(
     if (recipeId != null) viewModel.setRecipeId(recipeId)
     val state by viewModel.state.collectAsStateWithLifecycle()
 
+    LaunchedEffect(state.deleteFinished) {
+        if (state.deleteFinished) onBack(null)
+    }
+
     DetailsScreen(
         state = state,
         onAction = { action ->
             when (action) {
-                is DetailsAction.OnBack -> onBack(action.onCloudRecipe)
-                DetailsAction.OnEdit -> onEdit(recipeId ?: state.recipe?.id
+                is DetailsAction.OnBack -> onBack(state.recipe?.let { it.id to it.cloudId })
+                is DetailsAction.OnEdit -> onEdit(recipeId ?: state.recipe?.id
                     ?: throw IllegalStateException("recipeId and recipe are null"))
-                DetailsAction.OnDelete -> {
-                    onBack(false)
-                    viewModel.onAction(DetailsAction.OnDelete)
-                }
                 is DetailsAction.OnSave -> {
                     viewModel.onAction(DetailsAction.OnSave)
                     onSave()
@@ -99,6 +105,7 @@ fun DetailsScreen(
     onAction: (DetailsAction) -> Unit
 ) {
     val scope = rememberCoroutineScope()
+    val localClipboardManager = LocalClipboardManager.current
     val uriHandler = LocalUriHandler.current
 
     if (state.showPlanDialog && state.recipe != null) {
@@ -109,9 +116,24 @@ fun DetailsScreen(
         )
     }
 
+    // Dialog to disable UI
+    AnimatedVisibility(
+        visible = state.isDeleting,
+        enter = fadeIn(animationSpec = tween(200)),
+    ) {
+        Dialog(
+            onDismissRequest = {  },
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+            )
+        ) { }
+    }
+
     ImageBackground(
         imageUrl = state.recipe?.imageUrl,
-        onBackClick = { onAction(DetailsAction.OnBack(state.recipe?.isCloudOnly() == true)) },
+        onBackClick = { onAction(DetailsAction.OnBack) },
         rightIcons = @Composable {
             if (state.recipe?.sourceUrl != null && state.recipe.sourceUrl.isNotBlank() && state.recipe.sourceUrl.startsWith("https://")) {
                 IconButton(
@@ -171,16 +193,12 @@ fun DetailsScreen(
                 ),
             ) {
                 IconButton(
-                    onClick = {
-                        scope.launch {
-                            onAction(DetailsAction.OnSave)
-                        }
-                    }
+                    onClick = { onAction(DetailsAction.OnSave) }
                 ) {
                     Icon(
                         imageVector = if (state.recipe?.isCloudOnly() == true) CustomCloudDownloadIcon
                             else CustomDownloadDoneIcon,
-                        contentDescription = "Save Recipe",
+                        contentDescription = "Save Recipe locally",
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -206,21 +224,17 @@ fun DetailsScreen(
                             text = recipe.name,
                             style = MaterialTheme.typography.headlineSmall
                         )
-
+                        Text(
+                            text = recipe.getState().uiText.asString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                         if (recipe.description.isNotBlank()) {
                             Text(
                                 text = recipe.description,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
-                        Text(
-                            text = if (recipe.isCloudOnly()) stringResource(Res.string.cloud_recipe)
-                            else if (recipe.isLocalOnly()) stringResource(Res.string.local_recipe)
-                            else if (recipe.editedFromCloud) stringResource(Res.string.edited_cloud_recipe)
-                            else stringResource(Res.string.saved_cloud_recipe),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                     Column(
                         modifier = Modifier
@@ -234,11 +248,27 @@ fun DetailsScreen(
                                 contentDescription = "Open Source",
                                 tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                                 modifier = Modifier
-                                    .clickable { uriHandler.openUri(recipe.sourceUrl) }
+                                    .combinedClickable (
+                                        onClick = { uriHandler.openUri(recipe.sourceUrl) },
+                                        onLongClick = { // copy sourceUrl to clipboard
+                                            localClipboardManager.setText(
+                                                AnnotatedString(recipe.sourceUrl)
+                                            )
+                                        }
+                                    )
                                     .size(28.dp)
                             )
                         }
-                        if (!recipe.isCloudOnly()) {
+                        if (recipe.isCloudOnly()) {
+                            Icon(
+                                imageVector = CustomCloudDownloadIcon,
+                                contentDescription = "Save Recipe locally",
+                                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                                modifier = Modifier
+                                    .clickable { onAction(DetailsAction.OnSave) }
+                                    .size(28.dp)
+                            )
+                        } else {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = "Edit Recipe",
@@ -290,12 +320,18 @@ fun DetailsScreen(
                             modifier = Modifier
                                 .weight(1f)
                         ) {
+                            Row {
+                                Text(
+                                    text = if (recipe.rating == null && recipe.onlineRating != null)
+                                        "${stringResource(Res.string.online_rating)}: "
+                                    else
+                                        "${stringResource(Res.string.rating)}: ",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                RatingBar(recipe)
+                            }
                             Text(
-                                text = "Rating: ${recipe.rating ?: "–"}",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = "Servings: ${recipe.servings ?: "–"}",
+                                text = "${stringResource(Res.string.servings)}: ${recipe.servings ?: "–"}",
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -333,8 +369,7 @@ fun DetailsScreen(
                             text = stringResource(Res.string.ingredients),
                             style = MaterialTheme.typography.titleMedium,
                         )
-                        recipe.ingredients.forEach { (ingredient, amountPair) ->
-                            val (amount, overrideUnit) = amountPair
+                        recipe.ingredients.forEach { (ingredient, amount, overrideUnit) ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -387,13 +422,6 @@ fun Double?.toNiceString(): String {
         return "${this.toInt()} "
     }
     return "$this "
-}
-
-fun Recipe.isCloudOnly(): Boolean {
-    return this.id == 0L && this.cloudId != null
-}
-fun Recipe.isLocalOnly(): Boolean {
-    return this.id != 0L && this.cloudId == null
 }
 
 @Composable

@@ -12,14 +12,19 @@ import de.malteans.recipes.core.data.network.RemoteRecipeDataSource
 import de.malteans.recipes.core.domain.Ingredient
 import de.malteans.recipes.core.domain.PlannedRecipe
 import de.malteans.recipes.core.domain.Recipe
+import de.malteans.recipes.core.domain.RecipeIngredientItem
 import de.malteans.recipes.core.domain.RecipeRepository
 import de.malteans.recipes.core.domain.errorHandling.DataError
 import de.malteans.recipes.core.domain.errorHandling.Result
-import de.malteans.recipes.core.domain.errorHandling.map
+import de.malteans.recipes.core.domain.errorHandling.onError
+import de.malteans.recipes.core.domain.errorHandling.onSuccess
 import de.malteans.recipes.core.presentation.plan.components.TimeOfDay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
 
@@ -39,38 +44,51 @@ class DefaultRecipeRepository(
         // Remove existing ingredient and step relations
         dao.deleteRecipeIngredientsForRecipe(recipeId)
         dao.deleteRecipeStepsForRecipe(recipeId)
+
+        recipe.ingredients.upsert(false, fromCloud, recipeId)
+        recipe.cloudIngredients?.upsert(true, fromCloud, recipeId)
+
+        recipe.steps.upsert(false, recipeId)
+        recipe.cloudSteps?.upsert(true, recipeId)
+
+        return recipeId
+    }
+
+    private suspend fun List<RecipeIngredientItem>.upsert(isCloudData: Boolean, fromCloud: Boolean, recipeId: Long) {
         // Insert recipe ingredients based on the domain recipe.ingredients list.
         // If the recipe is from the cloud, find ingredients by name or insert them.
         val localIngredients = dao.getAllIngredients().first().associate { it.name.lowercase() to it }
-        recipe.ingredients.forEach { mapEntry ->
-            val (ingredient, amountPair) = mapEntry
-            val (amount, overrideUnit) = amountPair
+        this.forEach { (ingredient, amount, overrideUnit) ->
             // If from cloud, check for ingredient with same name in local db.
             // -> If found, use the local ingredient, otherwise insert it.
             val localIngredient: Ingredient = if (fromCloud) localIngredients[ingredient.name.lowercase()]?.toDomain()
-                ?: upsertIngredient(ingredient.copy(id = 0L)).let { ingredient.copy(id = it) }
-            else ingredient
+                    ?: upsertIngredient(ingredient.copy(id = 0L)).let { ingredient.copy(id = it) }
+                else ingredient
             val recipeIngredientEntity = RecipeIngredientEntity(
                 recipeId = recipeId,
                 ingredientId = localIngredient.id,
                 amount = amount,
                 overrideUnit = overrideUnit
                     ?: if (ingredient.unit != localIngredient.unit) ingredient.unit
-                    else null
+                        else null,
+                isCloudData = isCloudData,
             )
             dao.upsertRecipeIngredient(recipeIngredientEntity)
         }
+    }
+
+    private suspend fun List<String>.upsert(isCloudData: Boolean, recipeId: Long) {
         // Insert recipe steps.
-        recipe.steps.forEachIndexed { index, step ->
+        this.forEachIndexed { index, step ->
             val recipeStepEntity = RecipeStepEntity(
                 recipeId = recipeId,
                 stepNumber = index,
                 description = step,
-                duration = null // TODO: No duration info provided; defaulting to null.
+                duration = null, // TODO: No duration info provided; defaulting to null.
+                isCloudData = isCloudData,
             )
             dao.upsertRecipeStep(recipeStepEntity)
         }
-        return recipeId
     }
 
     // New function: Save a cloud recipe by upserting it with fromCloud=true.
@@ -83,10 +101,13 @@ class DefaultRecipeRepository(
     }
 
     // Updated to perform search directly in the database.
-    override suspend fun fetchLocalRecipes(query: String): List<Recipe> {
+    override fun fetchLocalRecipes(query: String): Flow<List<Recipe>> {
         return dao.searchRecipes(query)
-            .first()
-            .map { it.toDomain() }
+            .map { list ->
+                list.map { recipeWithDetails ->
+                    recipeWithDetails.toDomain()
+                }
+            }
     }
 
     override fun getAllRecipes(): Flow<List<Recipe>> {
@@ -114,25 +135,56 @@ class DefaultRecipeRepository(
         }
     }
 
-    override suspend fun fetchCloudRecipes(query: String): Result<List<Recipe>, DataError.Remote> {
-        return remoteDataSource
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun fetchCloudRecipes(query: String): Flow<Result<List<Recipe>, DataError.Remote>> {
+        var result: Flow<Result<List<Recipe>, DataError.Remote>> = flowOf(Result.Error(DataError.Remote.UNKNOWN))
+        remoteDataSource
             .fetchRecipes(query)
-            .map { dtoList ->
-                val allLocalRecipes = dao.getAllRecipes().associateBy { it.cloudId }
-                dtoList
-                    .map { dto -> dto.toDomain() }
-                    .map { cloudRecipe ->
-                        val localRecipe = allLocalRecipes[cloudRecipe.cloudId]
-                        if (localRecipe != null) {
-                            cloudRecipe.copy(
-                                id = localRecipe.id,
-                                editedFromCloud = localRecipe.editedFromCloud
-                            )
-                        } else {
-                            cloudRecipe
+            .onError { result = flowOf(Result.Error(it)) }
+            .onSuccess { dtoList ->
+                val cloudOnlyRecipes = dtoList.map { dto -> dto.toDomain() }
+                result = dao.getAllRecipesWithDetails()
+                    .map { list ->
+                        list.associate {
+                            it.recipe.cloudId to it.toDomain()
                         }
                     }
+                    .flatMapLatest { allLocalRecipes ->
+                        flowOf(Result.Success(
+                        cloudOnlyRecipes
+                            .map { cloudRecipe ->
+                                val localRecipe = allLocalRecipes[cloudRecipe.cloudId]
+                                if (localRecipe != null) {
+                                    Recipe(
+                                        id = localRecipe.id,
+                                        cloudId = cloudRecipe.cloudId,
+                                        sourceUrl = cloudRecipe.sourceUrl,
+                                        name = localRecipe.name,
+                                        cloudName = cloudRecipe.cloudName,
+                                        description = localRecipe.description,
+                                        cloudDescription = cloudRecipe.cloudDescription,
+                                        imageUrl = localRecipe.imageUrl,
+                                        cloudImageUrl = cloudRecipe.cloudImageUrl,
+                                        ingredients = localRecipe.ingredients,
+                                        cloudIngredients = cloudRecipe.cloudIngredients,
+                                        steps = localRecipe.steps,
+                                        cloudSteps = cloudRecipe.cloudSteps,
+                                        workTime = localRecipe.workTime,
+                                        cloudWorkTime = cloudRecipe.cloudWorkTime,
+                                        totalTime = localRecipe.totalTime,
+                                        cloudTotalTime = cloudRecipe.cloudTotalTime,
+                                        servings = localRecipe.servings,
+                                        cloudServings = cloudRecipe.cloudServings,
+                                        rating = localRecipe.rating,
+                                        onlineRating = cloudRecipe.onlineRating,
+                                    )
+                                }
+                                else cloudRecipe
+                            }
+                        ))
+                    }
             }
+        return result
     }
 
     // New functions for planning recipes:

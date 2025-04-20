@@ -24,8 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,6 +36,7 @@ import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.presentation.components.toUiText
 import de.malteans.recipes.core.presentation.search.components.RecipesList
 import de.malteans.recipes.core.presentation.search.components.SearchBar
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
@@ -66,6 +69,8 @@ fun SearchScreen(
     state: SearchState,
     onAction: (SearchAction) -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    val focusManger = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
     val pagerState = rememberPagerState { 2 }
@@ -78,9 +83,29 @@ fun SearchScreen(
 
     LaunchedEffect(pagerState.currentPage) {
         onAction(SearchAction.OnTabSelected(pagerState.currentPage))
-        when (pagerState.currentPage) {
-            0 -> localRecipesListState.animateScrollToItem(0)
-            1 -> cloudRecipesListState.animateScrollToItem(0)
+    }
+
+    LaunchedEffect(state.forceScrollTo) {
+        if (state.forceScrollTo != null) {
+            when (state.selectedTabIndex) {
+                0 -> {
+                    val index = state.localRecipes.indexOfFirst {
+                        it.id == state.forceScrollTo.first && it.cloudId == state.forceScrollTo.second
+                    }
+                    if (index != -1) {
+                        localRecipesListState.scrollToItem(index)
+                    }
+                }
+                1 -> {
+                    val index = state.cloudRecipes.indexOfFirst {
+                        it.id == state.forceScrollTo.first && it.cloudId == state.forceScrollTo.second
+                    }
+                    if (index != -1) {
+                        cloudRecipesListState.scrollToItem(index)
+                    }
+                }
+            }
+            onAction(SearchAction.ResetForceScrollTo)
         }
     }
 
@@ -97,7 +122,7 @@ fun SearchScreen(
                 onAction(SearchAction.OnSearchQueryChange(it))
             },
             onSearch = {
-                keyboardController?.hide()
+                focusManger.clearFocus()
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -133,7 +158,10 @@ fun SearchScreen(
                     Tab(
                         selected = state.selectedTabIndex == 0,
                         onClick = {
-                            onAction(SearchAction.OnTabSelected(0))
+                            if (state.selectedTabIndex == 0)
+                                scope.launch { localRecipesListState.animateScrollToItem(0) }
+                            else
+                                onAction(SearchAction.OnTabSelected(0))
                         },
                         modifier = Modifier
                             .weight(1f),
@@ -148,7 +176,12 @@ fun SearchScreen(
                     Tab(
                         selected = state.selectedTabIndex == 1,
                         onClick = {
-                            onAction(SearchAction.OnTabSelected(1))
+                            if (state.selectedTabIndex == 1) {
+                                onAction(SearchAction.OnRefreshCloud)
+                                scope.launch { cloudRecipesListState.scrollToItem(0) }
+                            } else {
+                                onAction(SearchAction.OnTabSelected(1))
+                            }
                         },
                         modifier = Modifier
                             .weight(1f),

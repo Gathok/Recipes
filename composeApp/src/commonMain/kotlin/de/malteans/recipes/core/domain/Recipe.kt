@@ -2,16 +2,24 @@ package de.malteans.recipes.core.domain
 
 data class Recipe(
     val id: Long = 0L,
-    val cloudId: Long? = null, // New field: non-null if coming from the cloud
-    val editedFromCloud: Boolean = false, // New field: true if edited locally after being fetched from the cloud
+    val cloudId: Long? = null,
     val sourceUrl: String? = null,
-    val name: String,
-    val description: String,
-    val imageUrl: String,
-    val ingredients: Map<Ingredient, Pair<Double?, String?>>, // Map<Ingredient, Pair<Amount?, OverrideUnit?>>
-    val steps: List<String>,
-    val workTime: Int?,
-    val totalTime: Int?,
-    val servings: Int?,
-    val rating: Int?,
+    val name: String = "",
+    val cloudName: String? = null,
+    val description: String = "",
+    val cloudDescription: String? = null,
+    val imageUrl: String = "",
+    val cloudImageUrl: String? = null,
+    val ingredients: List<RecipeIngredientItem> = emptyList(),
+    val cloudIngredients: List<RecipeIngredientItem>? = null,
+    val steps: List<String> = emptyList(),
+    val cloudSteps: List<String>? = null,
+    val workTime: Int? = null,
+    val cloudWorkTime: Int? = null,
+    val totalTime: Int? = null,
+    val cloudTotalTime: Int? = null,
+    val servings: Int? = null,
+    val cloudServings: Int? = null,
+    val rating: Int? = null,
+    val onlineRating: Double? = null,
 )

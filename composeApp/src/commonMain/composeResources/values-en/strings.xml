@@ -63,4 +63,8 @@
     <string name="edit_plan">Edit Plan</string>
     <string name="recipe">Recipe</string>
     <string name="no_planned_recipes">No planned recipes.</string>
+    <string name="servings">Servings</string>
+    <string name="rating">Rating</string>
+    <string name="online_rating">Online rating</string>
+    <string name="pre_cooking">Pre-cooking</string>
 </resources>

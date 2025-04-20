@@ -9,7 +9,7 @@ import kotlinx.datetime.LocalDate
 interface RecipeRepository {
     suspend fun upsertRecipe(recipe: Recipe, fromCloud: Boolean = false): Long
     suspend fun deleteRecipeById(id: Long)
-    suspend fun fetchLocalRecipes(query: String): List<Recipe>
+    fun fetchLocalRecipes(query: String): Flow<List<Recipe>>
     fun getAllRecipes(): Flow<List<Recipe>>
     fun getRecipeById(id: Long): Flow<Recipe>
 
@@ -17,7 +17,7 @@ interface RecipeRepository {
     suspend fun deleteIngredientById(id: Long)
     fun getAllIngredients(): Flow<List<Ingredient>>
 
-    suspend fun fetchCloudRecipes(query: String): Result<List<Recipe>, DataError.Remote>
+    suspend fun fetchCloudRecipes(query: String): Flow<Result<List<Recipe>, DataError.Remote>>
     suspend fun saveCloudRecipe(recipe: Recipe): Long  // New function for cloud recipes
 
     suspend fun planRecipe(recipeId: Long, date: LocalDate, timeOfDay: TimeOfDay): Long

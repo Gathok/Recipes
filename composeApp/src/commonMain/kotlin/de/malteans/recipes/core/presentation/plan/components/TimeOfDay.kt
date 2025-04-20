@@ -8,8 +8,10 @@ import recipes.composeapp.generated.resources.dinner
 import recipes.composeapp.generated.resources.evening_snack
 import recipes.composeapp.generated.resources.lunch
 import recipes.composeapp.generated.resources.morning_snack
+import recipes.composeapp.generated.resources.pre_cooking
 
 enum class TimeOfDay {
+    PRE_COOKING,
     BREAKFAST,
     MORNING_SNACK,
     LUNCH,
@@ -19,6 +21,7 @@ enum class TimeOfDay {
 
     val toUiText: UiText
         get() = when (this) {
+            PRE_COOKING -> UiText.FromStringResource(Res.string.pre_cooking)
             BREAKFAST -> UiText.FromStringResource(Res.string.breakfast)
             MORNING_SNACK -> UiText.FromStringResource(Res.string.morning_snack)
             LUNCH -> UiText.FromStringResource(Res.string.lunch)

@@ -79,7 +79,9 @@ import recipes.composeapp.generated.resources.min
 import recipes.composeapp.generated.resources.name
 import recipes.composeapp.generated.resources.no_ingredients
 import recipes.composeapp.generated.resources.preparation
+import recipes.composeapp.generated.resources.rating
 import recipes.composeapp.generated.resources.recipe_added_snackbar
+import recipes.composeapp.generated.resources.servings
 import recipes.composeapp.generated.resources.show
 import recipes.composeapp.generated.resources.step
 import recipes.composeapp.generated.resources.total_time
@@ -89,7 +91,7 @@ import recipes.composeapp.generated.resources.work_time
 @Composable
 fun AddScreenRoot(
     viewModel: AddViewModel = koinViewModel(),
-    onRecipeShow: (Long) -> Unit
+    onRecipeShow: (Long) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -247,7 +249,7 @@ fun AddScreen(
                     .weight(1f),
                 horizontalAlignment = Alignment.Start
             ) {
-                if (state.editingRecipeId == null) { // Is Add
+                if (state.editingRecipe == null) { // Is Add
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Clear the form",
@@ -265,7 +267,7 @@ fun AddScreen(
                         tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .clickable {
-                                onAction(AddAction.OnRecipeShow(state.editingRecipeId))
+                                onAction(AddAction.OnBack)
                                 focusManager.clearFocus()
                             }
                     )
@@ -277,7 +279,7 @@ fun AddScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if(state.editingRecipeId != null) stringResource(Res.string.edit_recipe)
+                    text = if(state.editingRecipe != null) stringResource(Res.string.edit_recipe)
                         else stringResource(Res.string.add_recipe),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center
@@ -302,7 +304,7 @@ fun AddScreen(
                                 scope.launch {
                                     val id = onRecipeAdd()
                                     onAction(AddAction.OnClear)
-                                    if (state.editingRecipeId != null) {
+                                    if (state.editingRecipe != null) {
                                         onAction(AddAction.OnRecipeShow(id))
                                     } else {
                                         SnackbarManager.showSnackbar(
@@ -471,6 +473,71 @@ fun AddScreen(
                                             )
                                         )
                                     }
+                                    // Rating + Servings ------------------------------------------
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(vertical = 4.dp)
+                                            .fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                        ) {
+                                            OutlinedTextField(
+                                                value = state.rating?.toString() ?: "",
+                                                onValueChange = { str ->
+                                                    val int = str.toIntOrNull()
+                                                    if ((int != null && int in 1..5) || str.isBlank()) {
+                                                        onAction(AddAction.OnRatingChange(int))
+                                                    }
+                                                },
+                                                label = {
+                                                    Text(stringResource(Res.string.rating))
+                                                },
+                                                suffix = {
+                                                    Text(" / 5")
+                                                },
+                                                singleLine = true,
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = KeyboardType.Number,
+                                                    imeAction = ImeAction.Next
+                                                ),
+                                                keyboardActions = KeyboardActions(
+                                                    onNext = {
+                                                        focusManager.moveFocus(FocusDirection.Right)
+                                                    }
+                                                ),
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column(
+                                            modifier = Modifier
+                                                .weight(1f),
+                                        ) {
+                                            OutlinedTextField(
+                                                value = state.servings?.toString() ?: "",
+                                                onValueChange = { str ->
+                                                    val int = str.toIntOrNull()
+                                                    if (int != null || str.isBlank()) {
+                                                        onAction(AddAction.OnServingsChange(int))
+                                                    }
+                                                },
+                                                label = {
+                                                    Text(stringResource(Res.string.servings))
+                                                },
+                                                singleLine = true,
+                                                keyboardOptions = KeyboardOptions(
+                                                    keyboardType = KeyboardType.Number,
+                                                    imeAction = ImeAction.Next
+                                                ),
+                                                keyboardActions = KeyboardActions(
+                                                    onNext = {
+                                                        focusManager.moveFocus(FocusDirection.Down)
+                                                    }
+                                                ),
+                                            )
+                                        }
+                                    }
                                     // Times ------------------------------------------------------
                                     Row(
                                         modifier = Modifier
@@ -540,7 +607,7 @@ fun AddScreen(
                                             )
                                         }
                                     }
-                                    // Picture Link -----------------------------------------------
+                                    // ImageUrl ---------------------------------------------------
                                     Row(
                                         modifier = Modifier
                                             .padding(vertical = 4.dp)

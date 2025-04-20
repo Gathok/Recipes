@@ -25,4 +25,5 @@ data class RecipeStepEntity(
     val stepNumber: Int,
     val description: String,
     val duration: Int?,
+    val isCloudData: Boolean = false,
 )

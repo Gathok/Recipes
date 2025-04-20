@@ -22,7 +22,7 @@ class PlanViewModel(
 
     private val _jumpToIndex = MutableStateFlow<Int?>(null)
 
-    private val _allRecipes = repository.getAllRecipes()
+    private val _allRecipes = repository.getAllRecipes() // TODO: optimize, just get recipes that match query
 
     private val _allPlannedRecipes = repository.getPlannedRecipes()
 

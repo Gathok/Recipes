@@ -32,6 +32,7 @@ import de.malteans.recipes.core.presentation.details.DetailsScreenRoot
 import de.malteans.recipes.core.presentation.details.DetailsViewModel
 import de.malteans.recipes.core.presentation.plan.PlanScreenRoot
 import de.malteans.recipes.core.presentation.search.SearchScreenRoot
+import de.malteans.recipes.core.presentation.search.SearchViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -72,7 +73,7 @@ fun NavGraph(
                 popEnterTransition = { fadeIn(animationSpec = tween(durationMillis = 300, easing = EaseInOut)) },
                 popExitTransition = { fadeOut(animationSpec = tween(durationMillis = 300, easing = EaseInOut)) },
             ) {
-                val args = it.toRoute<Route.SearchScreen>()
+                val viewModel = it.sharedKoinViewModel<SearchViewModel>(navController)
 
                 val selectedRecipeViewModel =
                     it.sharedKoinViewModel<SelectedRecipeViewModel>(navController)
@@ -82,6 +83,7 @@ fun NavGraph(
                 }
 
                 SearchScreenRoot(
+                    viewModel = viewModel,
                     onRecipeClick = { recipe ->
                         selectedRecipeViewModel.onSelectRecipe(recipe)
                         navController.navigate(Route.DetailScreen())
@@ -112,9 +114,11 @@ fun NavGraph(
             ) {
                 val args = it.toRoute<Route.DetailScreen>()
 
-                val selectedRecipeViewModel =
-                    it.sharedKoinViewModel<SelectedRecipeViewModel>(navController)
                 val viewModel = koinViewModel<DetailsViewModel>()
+
+                val searchViewModel = it.sharedKoinViewModel<SearchViewModel>(navController)
+
+                val selectedRecipeViewModel = it.sharedKoinViewModel<SelectedRecipeViewModel>(navController)
                 val selectedRecipe by selectedRecipeViewModel.selectedRecipe.collectAsStateWithLifecycle()
 
                 LaunchedEffect(selectedRecipe) {
@@ -124,7 +128,10 @@ fun NavGraph(
                 }
 
                 DetailsScreenRoot(
-                    onBack = { navController.popBackStack() },
+                    onBack = { listKey ->
+                        navController.popBackStack()
+                        searchViewModel.scrollTo(listKey)
+                    },
                     onEdit = { recipeId ->
                         navController.navigate(Route.EditScreen(recipeId))
                     },
@@ -142,6 +149,7 @@ fun NavGraph(
                 val args = it.toRoute<Route.EditScreen>()
                 EditScreenRoot(
                     recipeId = args.id,
+                    onBack = { navController.popBackStack() },
                     onFinished = {
                         navController.popBackStack()
                     }

@@ -13,7 +13,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -114,6 +116,7 @@ fun PlannedDayItem(
             enter = expandVertically(),
             exit = shrinkVertically(),
         ) {
+            var lastTimeOfDay: TimeOfDay? = null
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -123,12 +126,17 @@ fun PlannedDayItem(
                         modifier = Modifier
                             .fillMaxWidth()
                     ) {
-                        Text(
-                            text = plannedRecipe.timeOfDay.toUiText.asString(),
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier
-                                .padding(horizontal = 24.dp, vertical = 4.dp)
-                        )
+                        if (plannedRecipe.timeOfDay != lastTimeOfDay) {
+                            lastTimeOfDay = plannedRecipe.timeOfDay
+                            Text(
+                                text = plannedRecipe.timeOfDay.toUiText.asString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier
+                                    .padding(horizontal = 24.dp, vertical = 4.dp)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                         RecipeListItem(
                             recipe = plannedRecipe.recipe,
                             onClick = {

@@ -14,7 +14,7 @@ import de.malteans.recipes.core.data.database.entities.StepIngredientEntity
 @Database(
     entities = [IngredientEntity::class, RecipeEntity::class, RecipeIngredientEntity::class,
         RecipeStepEntity::class, StepIngredientEntity::class, PlanEntity::class],
-    version = 6,
+    version = 8,
     exportSchema = false,
 )
 @TypeConverters(

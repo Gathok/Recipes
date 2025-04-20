@@ -2,35 +2,115 @@ package de.malteans.recipes.core.presentation.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.malteans.recipes.core.domain.Recipe
 import de.malteans.recipes.core.domain.RecipeRepository
+import de.malteans.recipes.core.domain.errorHandling.DataError
+import de.malteans.recipes.core.domain.errorHandling.Result
 import de.malteans.recipes.core.domain.errorHandling.onError
 import de.malteans.recipes.core.domain.errorHandling.onSuccess
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
-@OptIn(FlowPreview::class)
+@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class SearchViewModel(
     private val repository: RecipeRepository,
 ) : ViewModel() {
 
-    private var _searchJob: Job? = null
+    private val _isLoading = MutableStateFlow(false)
+
+    private val _searchQuery = MutableStateFlow("")
+
+    private val _selectedTabIndex = MutableStateFlow(0)
+
+    private val _localRecipes: Flow<List<Recipe>?> = combine(
+        _searchQuery,
+        _selectedTabIndex,
+    ) { query, index ->
+        if (index == 0) {
+            _isLoading.update { true }
+            repository.fetchLocalRecipes(query)
+        } else {
+            flowOf(null)
+        }
+    }
+        .flatMapLatest { it }
+        .onEach { newLocalRecipes ->
+            if (newLocalRecipes != null)
+                _isLoading.update { false }
+        }
+
+    private val _forceRefreshCloud = MutableStateFlow(false)
+
+    private val _cloudRecipesResult: Flow<Result<List<Recipe>, DataError.Remote>?> = combine(
+        _forceRefreshCloud,
+        _searchQuery,
+        _selectedTabIndex,
+    ) { forceRefresh, query, index ->
+        if (index == 1) {
+            _isLoading.update { true }
+            repository.fetchCloudRecipes(query)
+        } else {
+            flowOf(null)
+        }
+    }
+        .flatMapLatest { it }
+        .onEach { newCloudRecipesResult ->
+            if (newCloudRecipesResult != null)
+                _isLoading.update { false }
+        }
 
     private val _state = MutableStateFlow(SearchState())
 
-    val state = _state
+    val state = combine(
+        _state,
+        _isLoading,
+        _selectedTabIndex,
+        _localRecipes,
+        _cloudRecipesResult,
+    ) { state, isLoading, selectedTabIndex, localRecipes, cloudRecipesResult ->
+        var result = state.copy(
+            isLoading = isLoading,
+            selectedTabIndex = selectedTabIndex,
+            localRecipes = localRecipes ?: emptyList(),
+        )
+        cloudRecipesResult
+            ?.onSuccess { cloudRecipes ->
+                result = result.copy(
+                    cloudRecipes = cloudRecipes,
+                    cloudError = null
+                )
+            }
+            ?.onError { error ->
+                result = result.copy(
+                    cloudRecipes = emptyList(),
+                    cloudError = error
+                )
+            }
+            ?: run {
+                result = result.copy(
+                    cloudRecipes = emptyList(),
+                    cloudError = null
+                )
+            }
+
+        return@combine result
+    }
         .onStart {
-            observerSearchQuery()
+            observeSearchQuery()
         }
         .stateIn(
             scope = viewModelScope,
@@ -41,66 +121,33 @@ class SearchViewModel(
     fun onAction(action: SearchAction) {
         when (action) {
             is SearchAction.OnSearchQueryChange -> {
-                _state.update {
-                    it.copy(searchQuery = action.query, cloudError = null)
-                }
+                _state.update { it.copy(searchQuery = action.query) }
             }
             is SearchAction.OnTabSelected -> {
-                if (_state.value.selectedTabIndex != action.index) {
-                    viewModelScope.launch {
-                        _state.update {
-                            it.copy(
-                                selectedTabIndex = action.index,
-                                cloudError = null,
-                            )
-                        }
-                        _searchJob?.cancel()
-                        _searchJob = when (action.index) {
-                            0 -> fetchLocalRecipes(state.value.searchQuery)
-                            1 -> fetchCloudRecipes(state.value.searchQuery)
-                            else -> throw IllegalStateException("Invalid tab index: ${action.index}")
-                        }
-                    }
-                }
+                _selectedTabIndex.update { action.index }
             }
-            else -> TODO()
+            is SearchAction.OnRefreshCloud -> {
+                _forceRefreshCloud.update { !_forceRefreshCloud.value }
+            }
+            is SearchAction.ResetForceScrollTo -> {
+                _state.update { it.copy(forceScrollTo = null) }
+            }
+            else -> throw IllegalArgumentException("Action not implemented in ViewModel: $action")
         }
     }
 
-    private fun observerSearchQuery() {
+    fun scrollTo(key: Pair<Long, Long?>?) {
+        _state.update { it.copy(forceScrollTo = key) }
+    }
+
+    private fun observeSearchQuery() {
         state
             .map { it.searchQuery }
             .distinctUntilChanged()
             .debounce(500L)
             .onEach { query ->
-                _searchJob?.cancel()
-                _searchJob = when (state.value.selectedTabIndex) {
-                    0 -> fetchLocalRecipes(query)
-                    1 -> fetchCloudRecipes(query)
-                    else -> throw IllegalStateException("Invalid tab index: ${state.value.selectedTabIndex}")
-                }
+                _searchQuery.update { query }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun fetchLocalRecipes(query: String) = viewModelScope.launch {
-        _state.update { it.copy(isLoading = true) }
-        _state.update {
-            it.copy(
-                localRecipes = repository.fetchLocalRecipes(query),
-                isLoading = false
-            )
-        }
-    }
-
-    private fun fetchCloudRecipes(query: String) = viewModelScope.launch {
-        _state.update { it.copy(isLoading = true) }
-        repository.fetchCloudRecipes(query)
-            .onSuccess { recipes ->
-                _state.update { it.copy(cloudRecipes = recipes, isLoading = false) }
-            }
-            .onError { error ->
-                _state.update { it.copy(cloudError = error, isLoading = false) }
-            }
     }
 }

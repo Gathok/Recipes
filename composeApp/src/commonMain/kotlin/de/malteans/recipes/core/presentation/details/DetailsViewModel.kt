@@ -33,7 +33,8 @@ class DetailsViewModel(
                 _recipeId.value = selectedRecipe.id
                 repository.getRecipeById(selectedRecipe.id)
             } else flowOf(selectedRecipe)
-    }.flatMapLatest { it }
+    }
+        .flatMapLatest { it }
 
     private val _state = MutableStateFlow(DetailsState())
 
@@ -41,7 +42,10 @@ class DetailsViewModel(
         _state,
         _recipe,
     ) { state, recipe ->
-        state.copy(recipe = recipe)
+
+        state.copy(
+            recipe = recipe,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -56,11 +60,17 @@ class DetailsViewModel(
     fun onAction(action: DetailsAction) {
         when (action) {
             is DetailsAction.OnDelete -> {
-                val recipeId = _recipeId.value ?: return
-                _recipeId.value = null
-                _selectedRecipe.value = null
+                _state.update { it.copy(
+                    isDeleting = true,
+                ) }
+                _selectedRecipe.update { state.value.recipe?.copy(id = 0L) }
+                val recipeId = _recipeId.value ?: throw IllegalStateException("No recipeId set, for deletion")
+                _recipeId.update { null }
                 viewModelScope.launch {
                     repository.deleteRecipeById(recipeId)
+                    _state.update { it.copy(
+                        deleteFinished = true,
+                    ) }
                 }
             }
             is DetailsAction.OnSelectedRecipeChange -> {
@@ -100,7 +110,7 @@ class DetailsViewModel(
                     ))
                 }
             }
-            else -> TODO()
+            else -> throw IllegalArgumentException("Action not implemented in ViewModel: $action")
         }
     }
 }

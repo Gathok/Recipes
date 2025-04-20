@@ -5,6 +5,7 @@ import de.malteans.recipes.core.domain.Ingredient
 sealed interface AddAction {
     data object OnRecipeAdd : AddAction
     data class OnRecipeShow(val id: Long) : AddAction
+    data object OnBack: AddAction
     data object OnClear : AddAction
 
     data class OnNameChange(val name: String) : AddAction
@@ -20,8 +21,8 @@ sealed interface AddAction {
     data class OnStepRemove(val index: Int) : AddAction
     data class OnWorkTimeChange(val time: Int?) : AddAction
     data class OnTotalTimeChange(val time: Int?) : AddAction
-    data class OnServingsChange(val servings: Int) : AddAction
-    data class OnRatingChange(val rating: Int) : AddAction
+    data class OnServingsChange(val servings: Int?) : AddAction
+    data class OnRatingChange(val rating: Int?) : AddAction
 
     data class OnTabSelect(val index: Int) : AddAction
     data object OnIngredientDialogDismiss : AddAction

@@ -78,6 +78,9 @@ kotlin {
 
             // Ktor (Networking)
             implementation(libs.bundles.ktor)
+
+            // Back Handler
+            implementation(libs.ui.backhandler)
         }
         nativeMain.dependencies {
             implementation(libs.ktor.client.darwin)

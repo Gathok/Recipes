@@ -10,4 +10,6 @@ data class SearchState(
     val cloudRecipes: List<Recipe> = emptyList(),
     val isLoading: Boolean = true,
     val cloudError: DataError? = null,
+
+    val forceScrollTo: Pair<Long, Long?>? = null,
 )

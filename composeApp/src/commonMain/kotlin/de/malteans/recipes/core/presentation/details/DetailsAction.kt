@@ -7,7 +7,7 @@ import kotlinx.datetime.LocalDate
 sealed interface DetailsAction {
     data class OnSelectedRecipeChange(val recipe: Recipe) : DetailsAction
 
-    data class OnBack(val onCloudRecipe: Boolean = false) : DetailsAction
+    data object OnBack : DetailsAction
     data object OnDelete : DetailsAction
     data object OnEdit : DetailsAction
     data object OnSave : DetailsAction  // New action: trigger saving the cloud recipe locally

@@ -1,6 +1,7 @@
 package de.malteans.recipes.core.presentation.add
 
 import de.malteans.recipes.core.domain.Ingredient
+import de.malteans.recipes.core.domain.Recipe
 
 data class AddState(
     val name: String = "",
@@ -21,6 +22,5 @@ data class AddState(
     val allIngredients: List<Ingredient> = emptyList(),
 
     // Fields for Editing
-    val editingRecipeId: Long? = null,
-    val cloudId: Long? = null,
+    val editingRecipe: Recipe? = null,
 )

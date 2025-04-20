@@ -1,11 +1,13 @@
 package de.malteans.recipes.core.presentation.details.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.EaseOut
 import androidx.compose.animation.core.EaseOutBack
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -34,9 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
@@ -51,6 +56,7 @@ import org.jetbrains.compose.resources.painterResource
 import recipes.composeapp.generated.resources.Res
 import recipes.composeapp.generated.resources.app_icon
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ImageBackground(
     imageUrl: String?,
@@ -96,6 +102,17 @@ fun ImageBackground(
 
     // Animatable for the sheet height fraction.
     val sheetHeightAnimatable = remember { Animatable(0f) }
+
+    fun customBackHandling() {
+        scope.launch {
+            sheetHeightAnimatable.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = 250, easing = EaseInOut)
+            )
+            onBackClick()
+        }
+    }
+    BackHandler { customBackHandling() }
 
     val navigationProgress by animateFloatAsState(
         targetValue = 300f,
@@ -144,43 +161,48 @@ fun ImageBackground(
     Box(
         modifier = modifier
             .onSizeChanged { containerSize = it }
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            .background(Color.Transparent)
             .fillMaxSize()
     ) {
         // Background Image
-        Image(
-            painter = if (imageLoadResult?.isSuccess == true) painter
+        AnimatedVisibility(
+            visible = imageUrl != null,
+            enter = fadeIn()
+        ) {
+            Image(
+                painter = if (imageLoadResult?.isSuccess == true) painter
                 else painterResource(Res.drawable.app_icon),
-            contentDescription = "Background Image",
-            contentScale = ContentScale.FillHeight,
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .blur(30.dp)
-        )
+                contentDescription = "Background Image",
+                contentScale = ContentScale.FillHeight,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .blur(30.dp)
+            )
 
-        val animatedScale by animateFloatAsState(
-            targetValue = if(imageLoadResult?.isSuccess == true) 0.2f else 0f,
-            animationSpec = tween(durationMillis = 600, easing = EaseOutBack)
-        )
+            val animatedScale by animateFloatAsState(
+                targetValue = if(imageLoadResult?.isSuccess == true) 0.2f else 0f,
+                animationSpec = tween(durationMillis = 600, easing = EaseOutBack)
+            )
 
-        // Top Image
-        Image(
-            painter = if (imageLoadResult?.isSuccess == true) painter
-                else painterResource(Res.drawable.app_icon),
-            contentDescription = "Top Image",
-            contentScale = ContentScale.FillWidth,
-            modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .graphicsLayer {
-                    val scale = if (imageLoadResult?.isSuccess == true) 0.8f + animatedScale else 1f
-                    scaleX = scale
-                    scaleY = scale
-                }
-        )
+            // Top Image
+            Image(
+                painter = if (imageLoadResult?.isSuccess == true) painter
+                    else painterResource(Res.drawable.app_icon),
+                contentDescription = "Top Image",
+                contentScale = ContentScale.FillWidth,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .graphicsLayer {
+                        val scale = if (imageLoadResult?.isSuccess == true) 0.8f + animatedScale else 1f
+                        scaleX = scale
+                        scaleY = scale
+                    }
+            )
+        }
 
         // Draggable Bottom Sheet Surface.
         // Its height is set to sheetHeightAnimatable.value * full screen height.
@@ -216,15 +238,7 @@ fun ImageBackground(
         // Back button in the top-left corner
         // on click, animate the sheet height to 0 (with 250ms tween) then call onBackClick.
         IconButton(
-            onClick = {
-                scope.launch {
-                    sheetHeightAnimatable.animateTo(
-                        targetValue = 0f,
-                        animationSpec = tween(durationMillis = 250, easing = EaseInOut)
-                    )
-                    onBackClick()
-                }
-            },
+            onClick = { customBackHandling() },
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .padding(top = 16.dp, start = 16.dp)

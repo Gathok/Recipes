@@ -19,8 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -42,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
 import de.malteans.recipes.core.domain.Recipe
+import de.malteans.recipes.core.presentation.components.RatingBar
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -142,18 +141,7 @@ fun RecipeListItem(
                     modifier = Modifier
                         .weight(1f)
                 ) {
-                    Row {
-                        for (i in 1..5) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "Rating",
-                                modifier = Modifier.size(16.dp),
-                                tint =
-                                    if (recipe.rating != null && i <= recipe.rating) MaterialTheme.colorScheme.tertiary
-                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                            )
-                        }
-                    }
+                    RatingBar(recipe, small = true)
                     Text(
                         text = recipe.name,
                         style = MaterialTheme.typography.titleMedium,
@@ -189,7 +177,13 @@ fun RecipeListItem(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = recipe.ingredients.keys.joinToString("; ") { it.name }.ifBlank { "–" },
+                        text = recipe.ingredients.joinToString(", ") { recipeIngredientItem ->
+                            var result = recipeIngredientItem.ingredient.name.split(",")[0].split("(")[0]
+                                .ifBlank { recipeIngredientItem.ingredient.name }
+                            // Return first uppercase word, if any, otherwise return the whole string
+                            return@joinToString result.split(" ").firstOrNull { it.isNotBlank() && it[0].isUpperCase() }
+                                ?.ifBlank { result }?: result
+                        }.ifBlank { "–" },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         maxLines = 1,
