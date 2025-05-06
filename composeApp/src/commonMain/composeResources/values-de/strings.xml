@@ -62,4 +62,6 @@
     <string name="online_rating">Online Bewertung</string>
     <string name="online">online</string>
     <string name="pre_cooking">Vorkochen</string>
+    <string name="custom_servings">Benutzerdefinierte Portionen</string>
+    <string name="custom_servings_desc">Menge der Zutaten für eine andere Anzahl an Portionen anpassen.</string>
 </resources>

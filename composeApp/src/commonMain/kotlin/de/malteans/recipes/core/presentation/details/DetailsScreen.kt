@@ -23,15 +23,21 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -43,16 +49,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.malteans.recipes.core.presentation.components.CustomDialog
 import de.malteans.recipes.core.presentation.components.CustomPlanDialog
 import de.malteans.recipes.core.presentation.components.RatingBar
 import de.malteans.recipes.core.presentation.details.components.CustomClockIcon
@@ -68,6 +78,8 @@ import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
+import recipes.composeapp.generated.resources.custom_servings
+import recipes.composeapp.generated.resources.custom_servings_desc
 import recipes.composeapp.generated.resources.ingredients
 import recipes.composeapp.generated.resources.min
 import recipes.composeapp.generated.resources.online
@@ -157,6 +169,85 @@ fun DetailsScreen(
                 usePlatformDefaultWidth = false,
             )
         ) { }
+    }
+
+    // Dialog for custom servings
+    var showServingsDialog by remember { mutableStateOf(false) }
+    if (showServingsDialog && state.recipe?.servings != null) {
+        var validToFinish by remember { mutableStateOf(false) }
+        var servingsString by remember { mutableStateOf(state.customServings?.toString() ?: state.recipe.servings.toString()) }
+
+        LaunchedEffect(servingsString) {
+            val servingsInt = servingsString.toIntOrNull()
+            validToFinish = servingsInt != null && servingsInt > 0
+        }
+
+        CustomDialog(
+            onDismissRequest = { showServingsDialog = false },
+            titleText = stringResource(Res.string.custom_servings),
+            leftIcon = {
+                Row {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clickable { showServingsDialog = false }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Reset to default",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .clickable {
+                                onAction(DetailsAction.CustomServings(null))
+                                showServingsDialog = false
+                            }
+                    )
+                }
+            },
+            rightIcon = {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Submit",
+                    tint = if (validToFinish) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                    modifier = Modifier
+                        .clickable {
+                            if (validToFinish) {
+                                onAction(DetailsAction.CustomServings(servingsString.toInt()))
+                                showServingsDialog = false
+                            }
+                        }
+                )
+            }
+        ) {
+            Text(
+                text = stringResource(Res.string.custom_servings_desc),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            OutlinedTextField(
+                value = servingsString,
+                onValueChange = { servingsString = it },
+                label = { Text(stringResource(Res.string.custom_servings)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (validToFinish) {
+                            onAction(DetailsAction.CustomServings(servingsString.toInt()))
+                            showServingsDialog = false
+                        }
+                    }
+                ),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .fillMaxWidth()
+            )
+        }
     }
 
     ImageBackground(
@@ -348,8 +439,16 @@ fun DetailsScreen(
                                 )
                             }
                             Text(
-                                text = "${stringResource(Res.string.servings)}: ${recipe.servings ?: "–"}",
-                                style = MaterialTheme.typography.bodyMedium
+                                text = "${stringResource(Res.string.servings)}: ${state.customServings ?: recipe.servings ?: "–"}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = if (state.customServings != null) MaterialTheme.colorScheme.secondary
+                                    else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier
+                                    .clickable {
+                                        if (state.recipe.servings != null) {
+                                            showServingsDialog = true
+                                        }
+                                    }
                             )
                         }
                         Spacer(modifier = Modifier.width(8.dp))
@@ -465,6 +564,11 @@ fun DetailsScreen(
                                             )
                                     ) {
                                         recipe.ingredients.forEach { (ingredient, amount, overrideUnit) ->
+                                            val factor = if (state.customServings != null && recipe.servings != null
+                                                    && state.customServings != recipe.servings) {
+                                                 state.customServings.toDouble() / recipe.servings.toDouble()
+                                            } else 1.0
+
                                             Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -474,8 +578,10 @@ fun DetailsScreen(
                                                         .weight(0.3f)
                                                 ) {
                                                     Text(
-                                                        text = "${amount.toNiceString()}${overrideUnit ?: ingredient.unit}",
+                                                        text = "${(amount?.times(factor)).toNiceString()}${overrideUnit ?: ingredient.unit}",
                                                         style = MaterialTheme.typography.bodyMedium,
+                                                        color = if (factor != 1.0) MaterialTheme.colorScheme.secondary
+                                                            else MaterialTheme.colorScheme.onSurface,
                                                     )
                                                 }
                                                 Column(

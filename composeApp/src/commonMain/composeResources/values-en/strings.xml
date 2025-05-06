@@ -68,4 +68,6 @@
     <string name="online_rating">Online rating</string>
     <string name="online">online</string>
     <string name="pre_cooking">Pre-cooking</string>
+    <string name="custom_servings">Custom Servings</string>
+    <string name="custom_servings_desc">Change the amount of ingredients for a different servings amount.</string>
 </resources>

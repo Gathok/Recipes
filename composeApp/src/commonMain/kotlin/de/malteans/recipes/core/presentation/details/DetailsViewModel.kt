@@ -116,6 +116,12 @@ class DetailsViewModel(
                     selectedTabIndex = action.index
                 ) }
             }
+
+            is DetailsAction.CustomServings -> {
+                _state.update { it.copy(
+                    customServings = action.servings
+                ) }
+            }
             else -> throw IllegalArgumentException("Action not implemented in ViewModel: $action")
         }
     }

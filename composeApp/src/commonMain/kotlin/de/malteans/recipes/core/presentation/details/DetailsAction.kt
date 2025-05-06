@@ -17,4 +17,6 @@ sealed interface DetailsAction {
     data class OnPlan(val date: LocalDate, val timeOfDay: TimeOfDay) : DetailsAction
 
     data class OnTabSelected(val index: Int) : DetailsAction
+
+    data class CustomServings(val servings: Int?) : DetailsAction
 }
