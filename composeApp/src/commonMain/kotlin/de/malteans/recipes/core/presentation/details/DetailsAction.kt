@@ -15,4 +15,6 @@ sealed interface DetailsAction {
     data object ShowPlanDialog : DetailsAction
     data object DismissPlanDialog : DetailsAction
     data class OnPlan(val date: LocalDate, val timeOfDay: TimeOfDay) : DetailsAction
+
+    data class OnTabSelected(val index: Int) : DetailsAction
 }

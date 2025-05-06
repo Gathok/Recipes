@@ -110,6 +110,12 @@ class DetailsViewModel(
                     ))
                 }
             }
+
+            is DetailsAction.OnTabSelected -> {
+                _state.update { it.copy(
+                    selectedTabIndex = action.index
+                ) }
+            }
             else -> throw IllegalArgumentException("Action not implemented in ViewModel: $action")
         }
     }

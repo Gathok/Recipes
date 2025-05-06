@@ -9,4 +9,6 @@ data class DetailsState(
     val isDeleting: Boolean = false,
 
     val showPlanDialog: Boolean = false,
+
+    val selectedTabIndex: Int = 0,
 )

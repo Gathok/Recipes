@@ -13,12 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -28,6 +32,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.AnnotatedString
@@ -61,10 +70,10 @@ import org.koin.compose.viewmodel.koinViewModel
 import recipes.composeapp.generated.resources.Res
 import recipes.composeapp.generated.resources.ingredients
 import recipes.composeapp.generated.resources.min
-import recipes.composeapp.generated.resources.online_rating
+import recipes.composeapp.generated.resources.online
 import recipes.composeapp.generated.resources.preparation
-import recipes.composeapp.generated.resources.rating
 import recipes.composeapp.generated.resources.servings
+import recipes.composeapp.generated.resources.step
 
 @Composable
 fun DetailsScreenRoot(
@@ -114,6 +123,25 @@ fun DetailsScreen(
             onSubmit = { onAction(DetailsAction.OnPlan(it.date, it.timeOfDay)) },
             initialRecipe = state.recipe,
         )
+    }
+
+    val pagerState = rememberPagerState { 2 }
+    val ingredientListState = rememberScrollState()
+    val preparationListState = rememberScrollState()
+
+    LaunchedEffect(state.selectedTabIndex) {
+        pagerState.animateScrollToPage(state.selectedTabIndex)
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        onAction(DetailsAction.OnTabSelected(pagerState.currentPage))
+    }
+
+    LaunchedEffect(state.recipe) {
+        if (state.recipe != null) {
+            ingredientListState.scrollTo(0)
+            preparationListState.scrollTo(0)
+        }
     }
 
     // Dialog to disable UI
@@ -298,22 +326,11 @@ fun DetailsScreen(
                 ) {
                     Spacer(modifier = Modifier.height(2.dp))
                 }
-                val scrollState = rememberScrollState()
-
-                LaunchedEffect(enableScrolling) {
-                    if (enableScrolling) {
-                        scrollState.animateScrollTo(0)
-                    }
-                }
 
                 Column(
                     modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .verticalScroll(
-                            state = scrollState,
-                            enabled = enableScrolling,
-                        ),
+                        .padding(top = 8.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
+                        .fillMaxWidth(),
                 ) {
                     Row(modifier = Modifier.fillMaxWidth()) {
                         Column(
@@ -321,14 +338,14 @@ fun DetailsScreen(
                                 .weight(1f)
                         ) {
                             Row {
+                                RatingBar(recipe)
                                 Text(
                                     text = if (recipe.rating == null && recipe.onlineRating != null)
-                                        "${stringResource(Res.string.online_rating)}: "
+                                        "(${stringResource(Res.string.online)})"
                                     else
-                                        "${stringResource(Res.string.rating)}: ",
+                                        "",
                                     style = MaterialTheme.typography.bodyMedium
                                 )
-                                RatingBar(recipe)
                             }
                             Text(
                                 text = "${stringResource(Res.string.servings)}: ${recipe.servings ?: "–"}",
@@ -345,7 +362,7 @@ fun DetailsScreen(
                                 modifier = Modifier
                                     .size(42.dp)
                             )
-                            Column (
+                            Column(
                                 modifier = Modifier
                                     .padding(start = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -357,55 +374,155 @@ fun DetailsScreen(
                                     )
                                 }
                                 Text(
-                                    text = if (recipe.totalTime != null) "${recipe.totalTime} ${stringResource(Res.string.min)}"
+                                    text = if (recipe.totalTime != null) "${recipe.totalTime} ${
+                                        stringResource(
+                                            Res.string.min
+                                        )
+                                    }"
                                     else "–",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
                         }
                     }
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = stringResource(Res.string.ingredients),
-                            style = MaterialTheme.typography.titleMedium,
-                        )
-                        recipe.ingredients.forEach { (ingredient, amount, overrideUnit) ->
-                            Row(
+                }
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                ) {
+                    TabRow(
+                        selectedTabIndex = state.selectedTabIndex,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        indicator = { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .weight(0.3f)
-                                ) {
-                                    Text(
-                                        text = "${amount.toNiceString()}${overrideUnit ?: ingredient.unit}",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                    .tabIndicatorOffset(tabPositions[state.selectedTabIndex])
+                            )
+                        },
+                    ) {
+                        Tab(
+                            selected = state.selectedTabIndex == 0,
+                            onClick = { onAction(DetailsAction.OnTabSelected(0)) },
+                            modifier = Modifier
+                                .weight(1f),
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.ingredients),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier
+                                    .padding(
+                                        top = 8.dp,
+                                        bottom = 4.dp,
                                     )
-                                }
-                                Column(
-                                    modifier = Modifier
-                                        .weight(0.7f)
-                                ) {
-                                    Text(
-                                        text = ingredient.name,
-                                        style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        Tab(
+                            selected = state.selectedTabIndex == 1,
+                            onClick = { onAction(DetailsAction.OnTabSelected(1)) },
+                            modifier = Modifier
+                                .weight(1f),
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurface
+                        ) {
+                            Text(
+                                text = stringResource(Res.string.preparation),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier
+                                    .padding(
+                                        top = 8.dp,
+                                        bottom = 4.dp,
                                     )
-                                }
-                            }
+                            )
                         }
                     }
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = stringResource(Res.string.preparation),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        recipe.steps.forEachIndexed { index, step ->
-                            Text(
-                                text = "${index + 1}. $step",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
+
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .weight(1f),
+                    ) { pageIndex ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            when (pageIndex) {
+                                0 -> { // Ingredients
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .verticalScroll(
+                                                state = ingredientListState,
+                                                enabled = enableScrolling,
+                                            )
+                                    ) {
+                                        recipe.ingredients.forEach { (ingredient, amount, overrideUnit) ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(0.3f)
+                                                ) {
+                                                    Text(
+                                                        text = "${amount.toNiceString()}${overrideUnit ?: ingredient.unit}",
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                    )
+                                                }
+                                                Column(
+                                                    modifier = Modifier
+                                                        .weight(0.7f)
+                                                ) {
+                                                    Text(
+                                                        text = ingredient.name,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                1 -> { // Preparation
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .verticalScroll(
+                                                state = preparationListState,
+                                                enabled = enableScrolling,
+                                            )
+                                    ) {
+                                        recipe.steps.forEachIndexed { index, step ->
+                                            Text(
+                                                text = stringResource(Res.string.step, index + 1),
+                                                style = MaterialTheme.typography.titleSmall,
+                                            )
+                                            Text(
+                                                text = step,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                            if (index != recipe.steps.size - 1) { // Don't show divider after last step
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(vertical = 2.dp)
+                                                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f))
+                                                ){
+                                                    Spacer(modifier = Modifier.height(1.dp))
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

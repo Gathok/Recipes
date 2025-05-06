@@ -60,5 +60,6 @@
     <string name="servings">Portionen</string>
     <string name="rating">Bewertung</string>
     <string name="online_rating">Online Bewertung</string>
+    <string name="online">online</string>
     <string name="pre_cooking">Vorkochen</string>
 </resources>

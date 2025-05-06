@@ -209,7 +209,7 @@ fun SearchScreen(
                         if (state.isLoading) {
                             CircularProgressIndicator()
                         } else {
-                            when (pageIndex)    {
+                            when (pageIndex) {
                                 0 -> { // Local recipes
                                     if (state.localRecipes.isEmpty()) {
                                         Text(
