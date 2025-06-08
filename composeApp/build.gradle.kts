@@ -92,6 +92,10 @@ kotlin {
     }
 }
 
+val apiToken: String? = providers
+    .gradleProperty("API_TOKEN")
+    .orNull
+
 android {
     namespace = "de.malteans.recipes"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -102,7 +106,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 3412012
         versionName = "0.1-pre2"
-        buildConfigField("String", "API_TOKEN", "\"OeDJFFAO9pcV0nq2RsJE\"")
+        buildConfigField("String", "API_TOKEN", apiToken?.let { "\"$it\"" } ?: "\"Test\"")
     }
     packaging {
         resources {
