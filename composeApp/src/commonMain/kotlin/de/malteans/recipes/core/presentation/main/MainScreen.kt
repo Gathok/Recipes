@@ -1,9 +1,11 @@
 package de.malteans.recipes.core.presentation.main
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
@@ -12,6 +14,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -72,27 +75,11 @@ fun MainScreen(
                 .padding(bottom = 48.dp)
         ) },
         modifier = Modifier.fillMaxSize(),
-    ) { pad ->
-        Column(
-            modifier = Modifier
-                .padding(pad)
-                .fillMaxSize()
-        ) {
-            Row(
+        bottomBar = {
+            BottomAppBar(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                NavGraph(
-                    navController = navController,
-                    setCurScreen = {
-                        onAction(MainAction.SetScreen(it))
-                    }
-                )
-            }
-            Row (
-                modifier = Modifier
-                    .fillMaxWidth()
+                    .height(64.dp),
+                contentPadding = PaddingValues(0.dp),
             ) {
                 NavItem(
                     icon = Icons.Outlined.DateRange,
@@ -120,7 +107,7 @@ fun MainScreen(
                 )
                 NavItem(
                     icon = if (state.curScreen == Screen.Edit) Icons.Filled.Edit
-                        else Icons.Filled.AddCircle,
+                    else Icons.Filled.AddCircle,
                     onClick = {
                         if (state.curScreen != Screen.Add && state.curScreen != Screen.Edit) {
                             navController.navigate(Route.AddScreen)
@@ -129,6 +116,25 @@ fun MainScreen(
                     selected = state.curScreen == Screen.Add || state.curScreen == Screen.Edit,
                     modifier = Modifier
                         .weight(1f)
+                )
+            }
+        }
+    ) { pad ->
+        Column(
+            modifier = Modifier
+                .padding(pad)
+                .fillMaxSize()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+                NavGraph(
+                    navController = navController,
+                    setCurScreen = {
+                        onAction(MainAction.SetScreen(it))
+                    }
                 )
             }
         }

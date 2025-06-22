@@ -104,8 +104,8 @@ android {
         applicationId = "de.malteans.recipes"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 3412012
-        versionName = "0.1-pre2"
+        versionCode = 3412013
+        versionName = "0.1-pre3"
         buildConfigField("String", "API_TOKEN", apiToken?.let { "\"$it\"" } ?: "\"Test\"")
     }
     packaging {
