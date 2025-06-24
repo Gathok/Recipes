@@ -215,7 +215,9 @@ fun DetailsScreen(
                     modifier = Modifier
                         .clickable {
                             if (validToFinish) {
-                                onAction(DetailsAction.CustomServings(servingsString.toInt()))
+                                onAction(DetailsAction.CustomServings(
+                                    servingsString.toInt().takeIf { it != state.recipe.servings }
+                                ))
                                 showServingsDialog = false
                             }
                         }
@@ -438,18 +440,33 @@ fun DetailsScreen(
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
-                            Text(
-                                text = "${stringResource(Res.string.servings)}: ${state.customServings ?: recipe.servings ?: "–"}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (state.customServings != null) MaterialTheme.colorScheme.secondary
-                                    else MaterialTheme.colorScheme.onSurface,
+                            Row(
                                 modifier = Modifier
                                     .clickable {
                                         if (state.recipe.servings != null) {
                                             showServingsDialog = true
                                         }
                                     }
-                            )
+                            ) {
+                                Text(
+                                    text = "${stringResource(Res.string.servings)}: ",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                )
+                                Text(
+                                    text = state.customServings?.toString() ?: recipe.servings?.toString() ?: "–",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (state.customServings != null) MaterialTheme.colorScheme.onSecondary
+                                        else MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier
+                                        .background(
+                                            color = if (state.customServings != null) MaterialTheme.colorScheme.secondary
+                                                else MaterialTheme.colorScheme.secondaryContainer,
+                                            shape = RoundedCornerShape(4.dp)
+                                        )
+                                        .padding(horizontal = 4.dp),
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Row(
@@ -577,12 +594,19 @@ fun DetailsScreen(
                                                     modifier = Modifier
                                                         .weight(0.3f)
                                                 ) {
-                                                    Text(
-                                                        text = "${(amount?.times(factor)).toNiceString()}${overrideUnit ?: ingredient.unit}",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        color = if (factor != 1.0) MaterialTheme.colorScheme.secondary
-                                                            else MaterialTheme.colorScheme.onSurface,
-                                                    )
+                                                    Row {
+                                                        Text(
+                                                            text = (amount?.times(factor)).toNiceString(),
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = if (factor != 1.0) MaterialTheme.colorScheme.secondary
+                                                                else MaterialTheme.colorScheme.onSurface,
+                                                        )
+                                                        Text(
+                                                            text = overrideUnit ?: ingredient.unit,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onSurface,
+                                                        )
+                                                    }
                                                 }
                                                 Column(
                                                     modifier = Modifier

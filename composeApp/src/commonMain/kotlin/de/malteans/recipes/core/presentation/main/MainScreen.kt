@@ -122,7 +122,7 @@ fun MainScreen(
     ) { pad ->
         Column(
             modifier = Modifier
-                .padding(pad)
+                .padding(bottom = pad.calculateBottomPadding())
                 .fillMaxSize()
         ) {
             Row(
